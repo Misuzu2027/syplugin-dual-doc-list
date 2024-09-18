@@ -1,0 +1,38 @@
+{
+  "name": "syplugin-dual-doc-list",
+  "author": "Misuzu2027",
+  "url": "https://github.com/Misuzu2027/syplugin-dual-doc-list",
+  "version": "0.0.1",
+  "minAppVersion": "3.0.12",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "desktop",
+    "browser-desktop",
+    "desktop-window"
+  ],
+  "displayName": {
+    "en_US": "Dual-Level Document List",
+    "zh_CN": "二级文档列表"
+  },
+  "description": {
+    "en_US": "Dual-Level Document List",
+    "zh_CN": "二级文档列表"
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README_zh_CN.md"
+  },
+  "funding": {
+    "custom": [
+      ""
+    ]
+  },
+  "keywords": [
+    "document",
+    "tree",
+    "文档",
+    "搜索"
+  ]
+}

@@ -1,0 +1,37 @@
+.box-path__icon {
+    position: relative;
+    // cursor: pointer;
+    overflow: hidden;
+
+    // text-align: center;
+    // font-size: 16px;
+    font-family: var(--b3-font-family-emoji);
+    margin-right: 4px;
+    // line-height: 22px;
+    transition: var(--b3-transition);
+    // height: 22px;
+    // padding: 0 4px;
+    // flex-shrink: 0;
+    border-radius: var(--b3-border-radius);
+}
+
+.box-path__icon img,
+.box-path__icon svg {
+    max-width: 100%;
+    vertical-align: middle;
+    border: 0;
+    // height: auto;
+    -ms-interpolation-mode: bicubic;
+    overflow: hidden;
+    float: left;
+    margin: 3px 0;
+    height: 17px;
+    width: 17px;
+    color: var(--b3-theme-on-surface);
+    border-radius: var(--b3-border-radius);
+
+}
+
+.scroll-container span {
+    font-size: 88%;
+}
