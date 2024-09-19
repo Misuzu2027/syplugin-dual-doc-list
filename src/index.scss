@@ -1,3 +1,15 @@
+::highlight(dual-doc-list-search-result-mark) {
+    background-color: var(--b3-protyle-inline-mark-background);
+    color: var(--b3-protyle-inline-mark-color);
+}
+
+::highlight(dual-doc-list-search-result-focus) {
+    background-color: var(--b3-theme-primary-lighter);
+    color: var(--b3-protyle-inline-mark-color);
+}
+
+
+
 .box-path__icon {
     position: relative;
     // cursor: pointer;

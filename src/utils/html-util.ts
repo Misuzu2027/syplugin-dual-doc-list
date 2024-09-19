@@ -100,11 +100,11 @@ export async function highlightElementTextByCss(
     const searchResultsHighlight = new Highlight(...allMatchRanges);
 
     // Register the Highlight object in the registry.
-    CSS.highlights.set("search-result-mark", searchResultsHighlight);
+    CSS.highlights.set("dual-doc-list-search-result-mark", searchResultsHighlight);
 
     if (matchFocusRange) {
         CSS.highlights.set(
-            "search-result-focus",
+            "dual-doc-list-search-result-focus",
             new Highlight(matchFocusRange),
         );
         return matchFocusRange;
@@ -153,8 +153,8 @@ export function scrollByRange(matchRange: Range, position: ScrollLogicalPosition
 
 
 export function clearCssHighlights() {
-    CSS.highlights.delete("search-result-mark");
-    CSS.highlights.delete("search-result-focus");
+    CSS.highlights.delete("dual-doc-list-search-result-mark");
+    CSS.highlights.delete("dual-doc-list-search-result-focus");
 }
 
 // 查找包含指定元素的最近的滚动容器

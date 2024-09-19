@@ -366,12 +366,15 @@
         // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 包含查找的节点
         let activeDocTab = getActiveTab();
         if (activeDocTab) {
-            let activeNodeId = activeDocTab
+            let activeDocContentElement = activeDocTab.querySelector(
+                "div.protyle-content",
+            ) as HTMLElement;
+            let activeNodeId = activeDocContentElement
                 .querySelector("div.protyle-title.protyle-wysiwyg--attr")
                 ?.getAttribute("data-node-id");
             if (activeNodeId == blockId) {
                 let matchFocusRangePromise = highlightElementTextByCss(
-                    activeDocTab,
+                    activeDocContentElement,
                     lastKeywords,
                     previewProtyleMatchFocusIndex,
                 );
@@ -628,6 +631,7 @@
 
     async function afterOpenDocTab(docTabPromise: Promise<ITab>) {
         let docTab = await docTabPromise;
+        console.log("afterOpenDocTab");
         let lastDocumentContentElement = docTab.panelElement
             .children[1] as HTMLElement;
 

@@ -1,7 +1,7 @@
 import { EnvConfig } from "@/config/EnvConfig";
 import { BlockItem, DocumentQueryCriteria } from "@/models/search-model";
 import { SettingConfig } from "@/models/setting-model";
-import { getBlockIndex, getBlocksIndexes, listDocsByPath, sql } from "@/utils/api";
+import { getBlockIndex, getBlocksIndexes, getDocInfo, listDocsByPath, sql } from "@/utils/api";
 import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { containsAllKeywords, isStrBlank, isStrNotBlank, } from "@/utils/string-util";
@@ -125,14 +125,15 @@ export async function queryDocumentByDb(
         // console.log("queryDocumentByDb", filse);
     
         // 尝试使用 getDocInfo 接口，这个接口不错，不过数据量大了终归很费时间。决定从业务角度改变，舍弃子文档数量等排序方式。
-        // let docInfoPromises = [];
-        // for (const document of documentSearchResults) {
-        //     let apiPromise = getDocInfo(document.id);
-        //     docInfoPromises.push(apiPromise);
-        // }
-        // let docInfos = await Promise.all(docInfoPromises);
-        // console.log("queryDocumentByDb", docInfos);
     */
+    // let docInfoPromises = [];
+    // for (const document of documentSearchResults) {
+    //     let apiPromise = getDocInfo(document.id);
+    //     docInfoPromises.push(apiPromise);
+    // }
+    // let docInfos = await Promise.all(docInfoPromises);
+    // console.log("queryDocumentByDb", docInfos);
+
     let documentItems = processQueryResults(
         documentSearchResults,
         keywords,

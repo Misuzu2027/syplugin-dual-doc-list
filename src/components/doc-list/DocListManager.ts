@@ -111,9 +111,6 @@ export class DocListManager {
         }
 
 
-        console.log(fileTreeDocElement);
-
-
         this.embedDocListSvelte = new DocList({
             target: docListElement,
             props: {
