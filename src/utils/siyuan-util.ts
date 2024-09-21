@@ -334,3 +334,16 @@ export function convertNumberToSordMode(sortCode: number): DocumentSortMode {
     return sortMode;
 
 }
+
+export function isElementHidden(element: Element) {
+    if (!element || element.tagName === "BODY") {
+        return false;
+    }
+
+    if (element.classList.contains("fn__none")) {
+        return true;
+    }
+
+    return isElementHidden(element.parentElement);
+}
+

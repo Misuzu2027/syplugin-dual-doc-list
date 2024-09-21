@@ -17,7 +17,9 @@ export class SettingConfig {
     defaultDbQuerySortOrder: DocumentSortMode;
     // 显示所有文档时的数量限制
     allDocsQueryLimit: number;
-
+    // 记忆文档的排序方式。
+    
+    // 清空所有文档记忆的排序方式。
 
 
 

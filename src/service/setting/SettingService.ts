@@ -4,7 +4,7 @@ import Instance from "@/utils/Instance";
 import { setReplacer } from "@/utils/json-util";
 import { mergeObjects } from "@/utils/object-util";
 
-const SettingFileName = 'backlink-panel-setting.json';
+const SettingFileName = 'dual-doc-list-setting.json';
 
 export class SettingService {
 

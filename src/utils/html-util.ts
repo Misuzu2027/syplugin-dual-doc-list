@@ -252,3 +252,10 @@ export function findParentElementWithAttribute(element: HTMLElement, types: stri
     }
     return null;
 }
+
+
+export function convertTextToFirstElement(htmlString: string): HTMLElement {
+    const template = document.createElement('template');
+    template.innerHTML = htmlString.trim(); // 去除可能的空白符
+    return template.content.firstElementChild as HTMLElement;
+  }

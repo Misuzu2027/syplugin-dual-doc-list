@@ -28,7 +28,7 @@
         isStrNotBlank,
         splitKeywordStringToArray,
     } from "@/utils/string-util";
-    import { getBlockByID } from "@/utils/api";
+    import { getBlockByID, getDocInfo } from "@/utils/api";
     import { SiyuanConstants } from "@/models/siyuan-constant";
     import { convertNumberToSordMode } from "@/utils/siyuan-util";
     import { isTouchDevice } from "@/libs/siyuan/functions";
@@ -229,6 +229,8 @@
         curPathNotebookId = null;
         curPathDocId = null;
         curPathDocPath = null;
+        curPathSortMethod =
+            SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
         updateDocList(
             curPathNotebookId,
             curPathDocId,
@@ -282,6 +284,8 @@
     function handleClickLogic(event: MouseEvent, blockId: string) {
         clearItemFocus();
         clickCount++;
+        let doubleClickTimeout =
+            SettingService.ins.SettingConfig.doubleClickTimeout;
 
         if (clickCount === 1) {
             const tabPosition = determineTabPosition(event);
@@ -289,11 +293,11 @@
 
             clickTimeoutId = setTimeout(() => {
                 clickCount = 0; // 重置计数
-            }, 300);
+            }, doubleClickTimeout);
         } else {
             clickCount = 0;
             clearTimeout(clickTimeoutId);
-            performDoubleClickAction();
+            performDoubleClickAction(blockId);
         }
     }
 
@@ -309,13 +313,33 @@
         return null;
     }
 
-    function performDoubleClickAction() {
+    async function performDoubleClickAction(blockId: string) {
         const focusSpanElement = document.querySelector(
             `#layouts div.file-tree.sy__file > div.block__icons > span[data-type="focus"]`,
         ) as HTMLElement;
 
         if (focusSpanElement) {
             focusSpanElement.click();
+        }
+        // 实现双击进入这个路径
+        let docItemInfo: DocumentTreeItemInfo;
+        for (const docItem of documentItems) {
+            if (docItem.fileBlock.id == blockId) {
+                docItemInfo = docItem;
+                break;
+            }
+        }
+        if (docItemInfo) {
+            let subFileCount = docItemInfo.fileBlock.subFileCount;
+            if (subFileCount === undefined || subFileCount === null) {
+                let docInfo = await getDocInfo(blockId);
+                subFileCount = docInfo.subFileCount;
+            }
+            if (subFileCount && subFileCount > 0) {
+                let fileBlock = docItemInfo.fileBlock;
+                searchInputKey = "";
+                switchPath(fileBlock.box, blockId, fileBlock.path);
+            }
         }
     }
 
@@ -604,7 +628,7 @@
     }
 
     function handleSearchInputChange(event) {
-        console.log("handleSearchInputChange searchInputKey ", searchInputKey);
+        // console.log("handleSearchInputChange searchInputKey ", searchInputKey);
         // if (event.isComposing) {
         //     return;
         // }
@@ -631,7 +655,7 @@
 
     async function afterOpenDocTab(docTabPromise: Promise<ITab>) {
         let docTab = await docTabPromise;
-        console.log("afterOpenDocTab");
+        // console.log("afterOpenDocTab");
         let lastDocumentContentElement = docTab.panelElement
             .children[1] as HTMLElement;
 

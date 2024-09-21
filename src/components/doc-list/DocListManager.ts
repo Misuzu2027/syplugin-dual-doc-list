@@ -1,7 +1,10 @@
 import DocList from "@/components/doc-list/doc-list.svelte";
+import { SettingConfig } from "@/models/setting-model";
 import { SettingService } from "@/service/setting/SettingService";
-import { findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
+import { convertTextToFirstElement, findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
 import Instance from "@/utils/Instance";
+import { isElementHidden } from "@/utils/siyuan-util";
+import { isStrNotBlank } from "@/utils/string-util";
 
 const EmbedDualDocListElementAttrName = "data-misuzu2027-embed-dualDocList";
 export class DocListManager {
@@ -19,6 +22,7 @@ export class DocListManager {
     init() {
         this.initInterval();
         this.initElementEventListener();
+        addObserveCommonMenuElement();
     }
 
 
@@ -26,6 +30,7 @@ export class DocListManager {
         this.destroyInterval();
         this.destroyElementEventListener();
         this.destroyEmbedDualDocList();
+        destroyObserveCommonMenuElement();
     }
 
     initElementEventListener() {
@@ -38,7 +43,7 @@ export class DocListManager {
 
     initInterval() {
         this.destroyInterval();
-        this.checkEmbedIntervalId = setInterval(() => this.intervalCheckEmbedDualDocTree(), 800)
+        this.checkEmbedIntervalId = setInterval(() => this.intervalCheckEmbedDualDocList(), 800)
     }
 
     destroyInterval() {
@@ -48,7 +53,7 @@ export class DocListManager {
         }
     }
 
-    intervalCheckEmbedDualDocTree() {
+    intervalCheckEmbedDualDocList() {
         let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
         if (showEmbedDualDocList) {
             this.createEmbedDualDocList();
@@ -97,7 +102,6 @@ export class DocListManager {
         docListElement.setAttribute("data-id", docTreeId);
         docListElement.setAttribute(EmbedDualDocListElementAttrName, "1");
         docListElement.classList.add("fn__flex-1");
-
         docListElement.style.flex = listViewFlex;
 
         docListElement.addEventListener("click", (event) => {
@@ -108,6 +112,9 @@ export class DocListManager {
             fileTreeDocElement.after(docListElement);
         } else {
             fileTreeDocElement.before(docListElement);
+        }
+        if (isElementHidden(fileTreeDocElement)) {
+            docListElement.classList.add("fn__none");
         }
 
 
@@ -160,16 +167,19 @@ export class DocListManager {
         }
         // 如果是笔记本，判断一下是否启用双击切换文档折叠。
         if (targetLiElementType == "navigation-root") {
-            this.handleNotebookDoubleClick(event);
+            if (this.handleNotebookDoubleClick(event)) {
+                return;
+            }
         }
 
         this.handleSelectDoc(targetLiElement)
     }
 
-    private handleNotebookDoubleClick(event: MouseEvent): void {
+    // return ： 是否双击
+    private handleNotebookDoubleClick(event: MouseEvent): boolean {
         let settingConfig = SettingService.ins.SettingConfig;
         if (!settingConfig || !settingConfig.doubleClickToggleNotebook) {
-            return;
+            return false;
         }
         this.clickCount++;
         let doubleClickTimeout = settingConfig.doubleClickTimeout;
@@ -179,7 +189,9 @@ export class DocListManager {
             setTimeout(() => {
                 this.clickCount = 0;
             }, doubleClickTimeout);
+            return false;
         }
+        return true;
     }
 
     handleSelectDoc(targetLiElement: HTMLElement) {
@@ -204,3 +216,71 @@ export class DocListManager {
 
 
 }
+
+let observerCommonMenuElement: MutationObserver;
+
+function addObserveCommonMenuElement() {
+    let protyleUtilElement = document.querySelector("#commonMenu > div.b3-menu__items");
+    if (protyleUtilElement.getAttribute("data-misuzu2027-observed") == "1") {
+        return;
+    }
+    if (observerCommonMenuElement) {
+        observerCommonMenuElement.disconnect;
+    }
+
+    // 创建一个 MutationObserver 实例，并传入回调函数
+    observerCommonMenuElement = new MutationObserver((mutationsList, observer) => {
+
+        let childNodes = protyleUtilElement.childNodes;
+        if (childNodes.length == 3
+            && childNodes[0].childNodes[1].textContent == "新建笔记本") {
+            createSwitchEmbedDualDocListButtonEle();
+        }
+
+        return;
+    });
+
+    // 配置 MutationObserver 监听的类型
+    const config = { childList: true, };
+    protyleUtilElement.setAttribute("data-misuzu2027-observed", "1")
+    // 开始观察目标节点
+    observerCommonMenuElement.observe(protyleUtilElement, config);
+}
+
+function destroyObserveCommonMenuElement() {
+    observerCommonMenuElement.disconnect();
+}
+
+
+function createSwitchEmbedDualDocListButtonEle() {
+    let menuElement = document.querySelector("#commonMenu > div.b3-menu__items");
+    if (!menuElement) {
+        return;
+    }
+    let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
+
+    let switchDocListButtonEle = document.createElement("button");
+    switchDocListButtonEle.classList.add("b3-menu__item");
+    let svgElement = document.createElement("svg");
+    svgElement.classList.add("b3-menu__icon");
+    let spanElement = document.createElement("span");
+    spanElement.classList.add("b3-menu__label");
+    spanElement.textContent = "二级文档列表";
+    if (showEmbedDualDocList) {
+        svgElement.innerHTML = (`<use xlink:href="#iconSelect"></use>`);
+    }
+
+    switchDocListButtonEle.append(svgElement, spanElement);
+    switchDocListButtonEle.addEventListener("click", (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        SettingService.ins.updateSettingCofnigValue("showEmbedDualDocList", !showEmbedDualDocList)
+        DocListManager.ins.intervalCheckEmbedDualDocList();
+        window.siyuan.menus.menu.remove();
+    })
+
+    menuElement.append(switchDocListButtonEle);
+
+}
+
+

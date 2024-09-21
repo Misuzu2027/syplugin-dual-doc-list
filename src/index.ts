@@ -30,9 +30,13 @@ export default class PluginSample extends Plugin {
 
     }
 
-    async onunload() { }
+    async onunload() {
+        DocListManager.ins.destroy();
+    }
 
-    uninstall() { }
+    uninstall() {
+        DocListManager.ins.destroy();
+    }
 
     openSetting(): void {
         openSettingsDialog();
