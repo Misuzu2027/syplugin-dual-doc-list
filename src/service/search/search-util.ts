@@ -185,6 +185,9 @@ function processQueryResults(
         highlightBlockContent(fileBlock, keywordArray);
 
         let icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_FILE);
+        if (fileBlock.subFileCount && fileBlock.subFileCount > 0) {
+            icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_FOLDER);
+        }
         if (fileBlock.ial) {
             let ial = convertIalStringToObject(fileBlock.ial);
             icon = convertIconInIal(ial.icon);

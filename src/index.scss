@@ -10,7 +10,7 @@
 
 
 
-.box-path__icon {
+.misuzu2027__doc-list .box-path__icon {
     position: relative;
     // cursor: pointer;
     overflow: hidden;
@@ -27,8 +27,8 @@
     border-radius: var(--b3-border-radius);
 }
 
-.box-path__icon img,
-.box-path__icon svg {
+.misuzu2027__doc-list .box-path__icon img,
+.misuzu2027__doc-list .box-path__icon svg {
     max-width: 100%;
     vertical-align: middle;
     border: 0;
@@ -44,6 +44,19 @@
 
 }
 
-.scroll-container span {
+.misuzu2027__doc-list .scroll-container span {
     font-size: 88%;
+}
+
+
+.misuzu2027__doc-list .doc-path {
+    /* 默认不显示下划线 */
+    text-decoration: none;
+    /* 设置鼠标指针为手型 */
+    cursor: pointer;
+}
+
+.misuzu2027__doc-list .doc-path:hover {
+    /* 悬浮时显示下划线 */
+    text-decoration: underline;
 }

@@ -38,8 +38,12 @@
         ],
         // "baseUrl": "./src",
         "paths": {
-            "@/*": ["./src/*"],
-            "@/libs/*": ["./src/libs/*"],
+            "@/*": [
+                "./src/*"
+            ],
+            "@/libs/*": [
+                "./src/libs/*"
+            ],
         }
     },
     "include": [

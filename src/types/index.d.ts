@@ -128,6 +128,7 @@ interface Window {
         emojis: any;
         dragElement: any;
         reqIds: any;
+        layout: any;
     };
     Lute: any;
 }

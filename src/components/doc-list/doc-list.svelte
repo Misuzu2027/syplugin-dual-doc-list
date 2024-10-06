@@ -74,6 +74,44 @@
         rootElement.addEventListener("mousedown", () => {
             window.siyuan.menus.menu.remove();
         });
+
+        rootElement.addEventListener("click", (event: any) => {
+            const target = event.target;
+
+            if (
+                target.tagName.toLowerCase() === "span" &&
+                target.hasAttribute("data-path-type")
+            ) {
+                let pathType = target.getAttribute("data-path-type");
+                let dataId = target.getAttribute("data-id");
+
+                let newNotebookId = null;
+                let newDocId = null;
+                let newDocPath = null;
+
+                if (pathType === "box") {
+                    newNotebookId = dataId;
+                    newDocId = null;
+                    newDocPath = "/";
+                } else if (pathType === "doc") {
+                    newNotebookId = curPathNotebookId;
+                    newDocId = dataId;
+                    newDocPath =
+                        curPathDocPath.split(dataId)[0] + dataId + ".sy";
+                }
+                if (isStrNotBlank(newNotebookId)) {
+                    console.log(
+                        "click path switch path ",
+                        newNotebookId,
+                        " ",
+                        newDocId,
+                        " ",
+                        newDocPath,
+                    );
+                    switchPath(newNotebookId, newDocId, newDocPath);
+                }
+            }
+        });
     }
 
     function initSiyuanEventBus() {
@@ -179,7 +217,7 @@
         }
     }
 
-    export function switchPath(
+    export async function switchPath(
         notebookId: string,
         docId: string,
         docPath: string,
@@ -187,6 +225,7 @@
         if (lockPath) {
             return;
         }
+        clearItemFocus();
         EnvConfig.ins.refreshNotebookMap();
         curPathNotebookId = notebookId;
         curPathDocId = docId;
@@ -211,7 +250,7 @@
             curPathSortMethod = docSortMethodTemp;
         }
 
-        updateDocList(
+        await updateDocList(
             notebookId,
             docId,
             docPath,
@@ -258,6 +297,8 @@
             toggleItemFocus(target);
             return;
         }
+        clearItemFocus();
+        target.classList.add("b3-list-item--focus");
 
         handleClickLogic(event, blockId);
     }
@@ -282,7 +323,6 @@
     }
 
     function handleClickLogic(event: MouseEvent, blockId: string) {
-        clearItemFocus();
         clickCount++;
         let doubleClickTimeout =
             SettingService.ins.SettingConfig.doubleClickTimeout;
@@ -319,7 +359,8 @@
         ) as HTMLElement;
 
         if (focusSpanElement) {
-            focusSpanElement.click();
+            // 暂时不聚焦一级文档树。
+            // focusSpanElement.click();
         }
         // 实现双击进入这个路径
         let docItemInfo: DocumentTreeItemInfo;
@@ -464,6 +505,116 @@
         }, 1536);
     }
 
+    export const getInstanceById = (
+        id: string,
+        layout = window.siyuan.layout.centerLayout,
+    ) => {
+        const _getInstanceById = (item: any, id: string) => {
+            if (item.id === id) {
+                return item;
+            }
+            if (!item.children) {
+                return;
+            }
+            let ret: ITab;
+            for (let i = 0; i < item.children.length; i++) {
+                ret = _getInstanceById(item.children[i], id) as ITab;
+                if (ret) {
+                    return ret;
+                }
+            }
+        };
+        return _getInstanceById(layout, id);
+    };
+
+    async function selectCurDoc() {
+        const element =
+            document.querySelector(
+                ".layout__wnd--active > .fn__flex > .layout-tab-bar > .item--focus",
+            ) || document.querySelector("ul.layout-tab-bar > .item--focus");
+        if (!element) {
+            return;
+        }
+        const tab = getInstanceById(element.getAttribute("data-id"));
+        if (
+            !tab ||
+            !tab.model ||
+            !tab.model.editor ||
+            !tab.model.editor.protyle
+        ) {
+            return;
+        }
+
+        let protyle = tab.model.editor.protyle;
+        let docId = protyle.block.id;
+        let notebookId = protyle.notebookId;
+        // 这里需要取打开文档的父级文档和路径。
+        let parentDocPath = getParentPath(protyle.path);
+        let parentDocId = getDocIdByPath(parentDocPath);
+
+        await switchPath(notebookId, parentDocId, parentDocPath);
+        const docLiElement = rootElement.querySelector(
+            `li[data-node-id="${docId}"]`,
+        ) as HTMLElement;
+        docLiElement.classList.add("b3-list-item--focus");
+
+        let docListElement = docLiElement.parentElement.parentElement;
+        // console.log(
+        //     "selectCurDoc",
+        //     docLiElement.offsetTop,
+        //     docListElement.clientHeight,
+        // );
+
+        if (docLiElement.offsetTop > docListElement.clientHeight) {
+            docListElement.scrollTop =
+                docLiElement.offsetTop -
+                docListElement.clientHeight / 2 -
+                docListElement.offsetTop;
+        } else {
+            docListElement.scrollTop = 0;
+        }
+    }
+
+    function getParentPath(path: string): string {
+        if (isStrBlank(path)) {
+            return null;
+        }
+        // 将路径按斜杠分割
+        const parts = path.split("/");
+
+        if (parts.length <= 1) {
+            return "/"; // 如果没有多余的路径部分，返回根路径
+        }
+
+        // 获取倒数第二部分并保留其后缀
+        const secondLast = parts[parts.length - 2];
+        const last = parts[parts.length - 1];
+
+        // 提取后缀，合并成新的路径
+        const suffix = last.split(".").pop();
+        return `/${parts.slice(1, -2).join("/")}/${secondLast}.${suffix}`;
+    }
+
+    function getDocIdByPath(path: string) {
+        if (isStrBlank(path)) {
+            return null;
+        }
+        // 将路径按斜杠分割
+        const parts = path.split("/");
+
+        if (parts.length < 1) {
+            return null; // 如果没有多余的路径部分，返回根路径
+        }
+        let docId = parts[parts.length - 1];
+        docId = docId.replace(".sy", "");
+        return docId;
+    }
+
+    async function switchShowSubDocOfSubDoc() {
+        showSubDocOfSubDoc = !showSubDocOfSubDoc;
+        refreshDocList();
+    }
+
     async function refreshDocListBySearchKey(searchKey: string) {
         await updateDocList(
             curPathNotebookId,
@@ -520,12 +671,14 @@
             fullTextSearch,
         );
 
+        updateCurPath(parentDocId);
+
         if (useDocByPathApi) {
             if (docSortMethod == curNotebookSortMethod) {
                 docSortMethod = null;
             }
 
-            queryDocumentByPath(
+            await queryDocumentByPath(
                 notebookId,
                 docPath,
                 keywords,
@@ -548,7 +701,7 @@
                 curPathSortMethod = docSortMethod;
             }
 
-            queryDocumentByDb(
+            await queryDocumentByDb(
                 notebookId,
                 parentDocId,
                 keywords,
@@ -560,14 +713,19 @@
                 isSearching = Math.max(0, isSearching - 1);
             });
         }
+    }
 
-        // console.log("curPathcurPathcurPathcurPathcurPath")
+    async function updateCurPath(parentDocId: string) {
         let showCurPathTemp = "/";
+
         if (isStrNotBlank(parentDocId)) {
             let parentDocInfo = await getBlockByID(parentDocId);
-            showCurPathTemp =
-                getBoxIconAndNameHtml(parentDocInfo.box) +
-                `<span>${parentDocInfo.hpath}</span>`;
+            showCurPathTemp = getBoxIconAndNameHtml(parentDocInfo.box);
+            let hpathSplit = parentDocInfo.hpath.split("/");
+            let pathSplit = parentDocInfo.path.split("/");
+            for (let i = 1; i < hpathSplit.length; i++) {
+                showCurPathTemp += `<span class="doc-path" data-path-type="doc" data-id="${pathSplit[i].replace(".sy", "")}">/${hpathSplit[i]}</span>`;
+            }
         } else if (isStrNotBlank(curPathNotebookId)) {
             showCurPathTemp = getBoxIconAndNameHtml(curPathNotebookId);
         }
@@ -588,9 +746,11 @@
             icon = notebook.icon;
         }
         let iconHtml = `<span class="box-path__icon">${icon}</span>`;
-        let nameHtml = `<span>${notebook.name}</span>`;
+        let nameHtml = `<span class="doc-path" data-path-type="box" data-id="${box}"> ${notebook.name}</span>`;
+        let boxPathHtml = iconHtml + nameHtml;
         // let name = notebook.name;
-        return iconHtml + nameHtml;
+        console.log(box);
+        return boxPathHtml;
     }
 
     function handleKeyDownSelectItem(event: KeyboardEvent) {
@@ -773,7 +933,11 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-<div class="fn__flex-column" style="height: 100%;" bind:this={rootElement}>
+<div
+    class="fn__flex-column misuzu2027__doc-list"
+    style="height: 100%;"
+    bind:this={rootElement}
+>
     <div class="flat_doc_tree--top">
         <div
             class="block__icons"
@@ -785,7 +949,15 @@
                 >
             </div>
             <span class="fn__flex-1 fn__space"></span>
-
+            <span
+                class="block__icon ariaLabel"
+                aria-label="定位打开的文档 "
+                style="opacity: 1;"
+                on:click={selectCurDoc}
+                on:keydown={handleKeyDownDefault}
+                ><svg><use xlink:href="#iconFocus"></use></svg></span
+            >
+            <span class="fn__space"></span>
             <label
                 class="block__icon ariaLabel"
                 aria-label="锁定当前路径 "
@@ -823,6 +995,7 @@
                     class="b3-switch fn__flex-center"
                     type="checkbox"
                     bind:checked={showSubDocOfSubDoc}
+                    on:click={switchShowSubDocOfSubDoc}
                 />
             </label>
         </div>
@@ -1005,5 +1178,10 @@
     }
     label.block__icon span.fn__space {
         width: 4px;
+    }
+
+    .b3-switch:hover:not(:disabled):before,
+    .b3-switch:focus:not(:disabled):before {
+        content: none;
     }
 </style>
