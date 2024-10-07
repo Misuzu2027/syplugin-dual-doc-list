@@ -14,7 +14,7 @@ type FileBlock = {
     ial?: string;
 
     refCount: number;
-    subFileCount?: number;
+    subFileCount: number;
 
     sort: number;
 

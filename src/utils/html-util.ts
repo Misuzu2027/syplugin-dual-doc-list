@@ -1,6 +1,10 @@
 import { isArrayEmpty } from "./array-util";
+import { isStrBlank } from "./string-util";
 
 export const escapeAttr = (html: string) => {
+    if (isStrBlank(html)) {
+        return null;
+    }
     return html.replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 };
 export async function highlightElementTextByCss(
@@ -258,4 +262,4 @@ export function convertTextToFirstElement(htmlString: string): HTMLElement {
     const template = document.createElement('template');
     template.innerHTML = htmlString.trim(); // 去除可能的空白符
     return template.content.firstElementChild as HTMLElement;
-  }
+}

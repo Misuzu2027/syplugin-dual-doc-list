@@ -1093,6 +1093,7 @@
                 <li
                     data-node-id={item.fileBlock.id}
                     data-name={escapeAttr(item.fileBlock.name)}
+                    data-count={item.fileBlock.subFileCount}
                     data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
                     class="b3-list-item"
