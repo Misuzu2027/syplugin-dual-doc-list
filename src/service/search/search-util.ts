@@ -1,15 +1,15 @@
 import { EnvConfig } from "@/config/EnvConfig";
 import { BlockItem, DocumentQueryCriteria } from "@/models/search-model";
-import { SettingConfig } from "@/models/setting-model";
-import { getBlockIndex, getBlocksIndexes, getDocInfo, listDocsByPath, sql } from "@/utils/api";
+import { getBlockIndex, getBlocksIndexes, listDocsByPath, listDocTree, sql } from "@/utils/api";
 import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
 import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
 import { containsAllKeywords, isStrBlank, isStrNotBlank, } from "@/utils/string-util";
-import { generateDocumentListSql } from "./search-sql";
+import { generateDocumentListSql, generateGetRootBlockCountSql } from "./search-sql";
 import { DocumentTreeItemInfo } from "@/models/document-model";
-import { convertNumberToSordMode, convertSordModeToNumber, getFileArialLabel, highlightBlockContent } from "@/utils/siyuan-util";
+import { convertSordModeToNumber, getFileArialLabel, highlightBlockContent } from "@/utils/siyuan-util";
 import { SiyuanConstants } from "@/models/siyuan-constant";
 import { SettingService } from "../setting/SettingService";
+import { isNumberNotValid, isNumberValid } from "@/utils/number-util";
 
 
 export async function queryDocumentByPath(
@@ -66,6 +66,7 @@ export async function queryDocumentByPath(
 export async function queryDocumentByDb(
     notebookId: string,
     parentDocId: string,
+    docPath: string,
     keywords: string[],
     showSubDocuments: boolean,
     fullTextSearch: boolean,
@@ -101,46 +102,20 @@ export async function queryDocumentByDb(
     );
 
     let documentListSql = generateDocumentListSql(queryCriteria);
-    let documentSearchResults: FileBlock[] = await sql(documentListSql);
-    /*
-        // 数据量大的时候也快不起来，毕竟一个路径下面有很多文档。。
-        // let boxPathSet = new Set<string>();
-        // let docByPathPromises = [];
-        // for (const document of documentSearchResults) {
-        //     let path = processPath(document.path);
-        //     let bp = document.box + "&&&" + document.path;
-        //     if (!boxPathSet.has(bp)) {
-        //         boxPathSet.add(bp);
-        //         let apiPromise = listDocsByPath(
-        //             document.box,
-        //             path,
-        //             true,
-        //             0,
-        //             false,
-        //         );
-        //         docByPathPromises.push(apiPromise);
-        //     }
-        // }
-        // let filse = await Promise.all(docByPathPromises);
-        // console.log("queryDocumentByDb", filse);
-    
-        // 尝试使用 getDocInfo 接口，这个接口不错，不过数据量大了终归很费时间。决定从业务角度改变，舍弃子文档数量等排序方式。
-    */
-    // let docInfoPromises = [];
-    // for (const document of documentSearchResults) {
-    //     let apiPromise = getDocInfo(document.id);
-    //     docInfoPromises.push(apiPromise);
-    // }
-    // let docInfos = await Promise.all(docInfoPromises);
-    // console.log("queryDocumentByDb", docInfos);
+    let fileBlockResults: FileBlock[] = await sql(documentListSql);
+
+    await Promise.all([
+        setBlockRefCount(fileBlockResults),
+        setBlockSubFileCount(fileBlockResults, notebookId, docPath)
+    ]);
 
     let documentItems = processQueryResults(
-        documentSearchResults,
+        fileBlockResults,
         keywords,
         false,
     );
 
-    if (docSortMethod.startsWith("Alphanum")) {
+    if (docSortMethod.startsWith("Alphanum") || docSortMethod.startsWith("SubDocCount")) {
         documentSort(documentItems, docSortMethod);
     }
 
@@ -152,6 +127,152 @@ export async function queryDocumentByDb(
 
     return documentItems;
 }
+
+async function setBlockRefCount(fileBlockResults: FileBlock[]) {
+    const startTime = performance.now(); // 记录开始时间
+    let ids = [];
+    for (const block of fileBlockResults) {
+        if (block && isNumberNotValid(block.refCount)) {
+            ids.push(block.id);
+        }
+    }
+    if (isArrayEmpty(ids)) {
+        return;
+    }
+    let getRootBlockCountSql = generateGetRootBlockCountSql(ids);
+    let refCountArray = await sql(getRootBlockCountSql);
+    let refCountMap = new Map<string, number>();
+    for (const item of refCountArray) {
+        refCountMap.set(item.def_block_root_id, item.count);
+    }
+    for (const block of fileBlockResults) {
+        let refCount = refCountMap.get(block.id);
+        if (block && isNumberValid(refCount)) {
+            block.refCount = refCount;
+        }
+    }
+
+
+    const endTime = performance.now(); // 记录结束时间
+    const executionTime = endTime - startTime; // 计算时间差
+    console.log(
+        `设置文档引用数量 处理时间 : ${executionTime} ms `,
+    );
+}
+
+async function setBlockSubFileCount(fileBlockResults: FileBlock[], notebookId: NotebookId, docPath: string) {
+    const startTime = performance.now(); // 记录开始时间
+    let notebookPathSet = new Set<string>();
+    if (isStrNotBlank(notebookId)) {
+        let path = "";
+        if (isStrNotBlank(docPath)) {
+            path = removeLastPathSegment(path);
+        }
+        let np = notebookId + "::" + path;
+        notebookPathSet.add(np);
+    } else {
+        for (const document of fileBlockResults) {
+            let box = document.box;
+            let path = document.path;
+            if (!EnvConfig.ins.notebookMap.has(box)) {
+                continue;
+            }
+            if (isStrNotBlank(path)) {
+                path = removeLastPathSegment(path);
+            }
+            let np = box + "::" + path;
+            notebookPathSet.add(np);
+        }
+        notebookPathSet = findShortestPaths(notebookPathSet);
+    }
+    let docTreePromises = [];
+    for (const np of notebookPathSet) {
+        let nps = np.split("::");
+        let apiPromise = listDocTree(nps[0], nps[1]);
+        docTreePromises.push(apiPromise);
+    }
+    let docTreeArray: IDocTreeResp[] = await Promise.all(docTreePromises);
+    let docSubCountMap = docTreeRespArrayToMap(docTreeArray);
+
+    for (const document of fileBlockResults) {
+        let subFileCount = docSubCountMap.get(document.id);
+        subFileCount = subFileCount ? subFileCount : 0;
+        document.subFileCount = subFileCount;
+    }
+    const endTime = performance.now(); // 记录结束时间
+    const executionTime = endTime - startTime; // 计算时间差
+    console.log(
+        `设置文档子文档数量方法 发送请求数量 ${docTreePromises.length}，笔记本数量 ${EnvConfig.ins.notebookMap.size}，处理时间 : ${executionTime} ms `,
+    );
+
+}
+
+function docTreeRespArrayToMap(resps: IDocTreeResp[]): Map<string, number> {
+    const result = new Map<string, number>();
+
+    // 递归遍历每个节点
+    function traverse(nodes: ITreeNode[]) {
+        for (const node of nodes) {
+            const childrenCount = node.children ? node.children.length : 0;
+            result.set(node.id, childrenCount);
+
+            // 如果有子节点，递归处理
+            if (node.children && node.children.length > 0) {
+                traverse(node.children);
+            }
+        }
+    }
+
+    // 从根节点开始遍历
+    for (const resp of resps) {
+        if (resp && resp.tree) {
+            traverse(resp.tree);
+        }
+    }
+
+    return result;
+}
+function removeLastPathSegment(path: string): string {
+    // 使用最后一个斜杠将路径分割成数组
+    const segments = path.split('/');
+
+    // 如果数组长度小于等于1，返回原路径
+    if (segments.length <= 1) {
+        return "/";
+    }
+
+    // 去掉最后一个路径部分并重新组合路径
+    segments.pop(); // 移除最后一个部分
+    return segments.join('/'); // 重新组合路径
+}
+
+
+function findShortestPaths(paths: Set<string>): Set<string> {
+    // 创建一个 Map 用于存储以每个路径的开头部分作为键，路径数组作为值
+    const pathMap = new Map<string, string[]>();
+
+    paths.forEach(path => {
+        // 以路径的第一部分（根节点）作为键
+        const root = path.split('/')[0];  // 取第一个 id 节点
+        if (!pathMap.has(root)) {
+            pathMap.set(root, []);
+        }
+        pathMap.get(root)!.push(path);
+    });
+
+    // 遍历 Map，找到每组中最短的路径
+    const shortestPaths: Set<string> = new Set<string>();
+    pathMap.forEach((groupedPaths, root) => {
+        const shortestPath = groupedPaths.reduce((shortest, current) =>
+            current.length < shortest.length ? current : shortest
+        );
+        shortestPaths.add(shortestPath);
+    });
+
+    return shortestPaths;
+}
+
+
 
 function processQueryResults(
     fileBlockArray: FileBlock[],
@@ -408,6 +529,38 @@ function getDocumentSortFun(documentSortMethod: DocumentSortMode)
                 let aContent = a.fileBlock.content.replace("<mark>", "").replace("</mark>", "");
                 let bContent = b.fileBlock.content.replace("<mark>", "").replace("</mark>", "");
                 let result = bContent.localeCompare(aContent, undefined, { sensitivity: 'base', usage: 'sort', numeric: true });
+                if (result == 0) {
+                    result = Number(b.fileBlock.updated) - Number(a.fileBlock.updated);
+                }
+                return result;
+            };
+            break;
+        case "SubDocCountASC":
+            documentSortFun = function (
+                a: DocumentTreeItemInfo,
+                b: DocumentTreeItemInfo,
+            ): number {
+                let rank = getDocumentBlockRankDescSort(a, b);
+                if (rank != 0) {
+                    return rank;
+                }
+                let result = a.fileBlock.subFileCount - b.fileBlock.subFileCount
+                if (result == 0) {
+                    result = Number(b.fileBlock.updated) - Number(a.fileBlock.updated);
+                }
+                return result;
+            };
+            break;
+        case "SubDocCountDESC":
+            documentSortFun = function (
+                a: DocumentTreeItemInfo,
+                b: DocumentTreeItemInfo,
+            ): number {
+                let rank = getDocumentBlockRankDescSort(a, b);
+                if (rank != 0) {
+                    return rank;
+                }
+                let result = b.fileBlock.subFileCount - a.fileBlock.subFileCount;
                 if (result == 0) {
                     result = Number(b.fileBlock.updated) - Number(a.fileBlock.updated);
                 }

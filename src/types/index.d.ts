@@ -150,3 +150,13 @@ interface IBreadcrumb {
     subType: string;
     children: [];
 }
+
+
+interface ITreeNode {
+    id: string;
+    children?: ITreeNode[];
+}
+
+interface IDocTreeResp {
+    tree: ITreeNode[];
+}

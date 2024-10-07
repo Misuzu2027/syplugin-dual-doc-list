@@ -197,6 +197,25 @@ export async function listDocsByPath(
 }
 
 
+export async function listDocTree(
+    notebook: NotebookId,
+    path: string,
+): Promise<IDocTreeResp> {
+    /**
+     * {
+  "notebook": "20220902115243-k6ogmmk",
+  "path": "/20220902221817-v7xndwe" // "" , "/" 
+}
+}
+     */
+    let data = {
+        notebook: notebook,
+        path: path,
+    };
+    let url = '/api/filetree/listDocTree';
+    return request(url, data);
+}
+
 // **************************************** Asset Files ****************************************
 
 export async function upload(assetsDirPath: string, files: any[]): Promise<IResUpload> {

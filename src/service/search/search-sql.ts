@@ -16,8 +16,10 @@ export function generateDocumentListSql(
     let includeNotebookIds = queryCriteria.includeNotebookIds;
     let documentSortMethod = queryCriteria.documentSortMethod;
     let includeConcatFields = queryCriteria.includeConcatFields;
-    let columns: string[] = [" * ",
-        ` (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount `,
+    let columns: string[] = [
+        // " * "
+        " id, root_id, box, path, hpath, name, alias, memo, tag, content, ial, created, updated ",
+
         //  子文档数量查询sql，太影响性能了
         // ` ( SELECT count( 1 ) FROM blocks sub WHERE type = 'd' AND path = REPLACE(blocks.path,'.sy','/') || id || '.sy'  ) subDocCount `
     ];
@@ -71,13 +73,17 @@ export function generateDocumentListSql(
     } else if (documentSortMethod == 'CreatedDESC') {
         orders.push([" created DESC "]);
     } else if (documentSortMethod == 'RefCountASC') {
+        columns.push(` (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount `);
         orders.push([" refCount ASC ", " updated DESC "]);
     } else if (documentSortMethod == 'RefCountDESC') {
+        columns.push(` (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount `);
         orders.push([" refCount DESC ", " updated DESC "]);
     } else if (documentSortMethod == 'NameASC') {
         orders.push([" content ASC "]);
     } else if (documentSortMethod == 'NameDESC') {
         orders.push([" content DESC "]);
+    } else {
+        orders.push([" updated DESC "]);
     }
 
     let columnSql = columns.join(" , ");
@@ -104,6 +110,34 @@ export function generateDocumentListSql(
     return cleanSpaceText(basicSql);
 }
 
+
+
+export function generateGetRootBlockCountSql(
+    rootIds: string[],
+): string {
+
+
+    let columns: string[] = [" def_block_root_id ", "count(1) count"];
+
+
+    let defBlockRootIdIn = " "
+    if (isArrayNotEmpty(rootIds)) {
+        defBlockRootIdIn = generateAndInConditions("def_block_root_id", rootIds);
+
+    }
+
+    let columnSql = columns.join(" , ");
+    let basicSql = `
+    SELECT 
+         ${columnSql}
+    FROM refs
+    WHERE 1 = 1  
+        ${defBlockRootIdIn}
+    GROUP BY def_block_root_id
+    `
+
+    return cleanSpaceText(basicSql);
+}
 
 
 

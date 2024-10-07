@@ -268,8 +268,10 @@
         curPathNotebookId = null;
         curPathDocId = null;
         curPathDocPath = null;
-        curPathSortMethod =
-            SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
+        if (!lockSortOrder) {
+            curPathSortMethod =
+                SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
+        }
         updateDocList(
             curPathNotebookId,
             curPathDocId,
@@ -692,8 +694,8 @@
                 isStrBlank(docSortMethod) ||
                 docSortMethod.startsWith("Custom") ||
                 docSortMethod.startsWith("Size") ||
-                docSortMethod.startsWith("SubDoc") ||
                 docSortMethod.startsWith("FileTree")
+                // || (docSortMethod.startsWith("SubDoc") && isStrBlank(notebookId))
             ) {
                 docSortMethod =
                     SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
@@ -704,6 +706,7 @@
             await queryDocumentByDb(
                 notebookId,
                 parentDocId,
+                docPath,
                 keywords,
                 showSubDocuments,
                 fullTextSearch,
@@ -748,8 +751,7 @@
         let iconHtml = `<span class="box-path__icon">${icon}</span>`;
         let nameHtml = `<span class="doc-path" data-path-type="box" data-id="${box}"> ${notebook.name}</span>`;
         let boxPathHtml = iconHtml + nameHtml;
-        // let name = notebook.name;
-        console.log(box);
+
         return boxPathHtml;
     }
 
@@ -1092,7 +1094,7 @@
             >
                 <li
                     data-node-id={item.fileBlock.id}
-                    data-name={escapeAttr(item.fileBlock.name)}
+                    data-block-name={escapeAttr(item.fileBlock.name)}
                     data-count={item.fileBlock.subFileCount}
                     data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px 5px;"

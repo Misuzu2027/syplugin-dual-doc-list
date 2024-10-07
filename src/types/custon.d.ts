@@ -27,6 +27,10 @@ type FileBlock = {
     dueFlashcardCount?: string;
     newFlashcardCount?: string;
     flashcardCount?: string;
+
+
+    // 数据库相关的字段
+    rootId?: string;
 }
 
 
