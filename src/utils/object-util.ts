@@ -1,3 +1,5 @@
+import { BlockList } from "net";
+
 export function getObjectSizeInKB(obj: any): number {
     try {
         // 将 JSON 对象转换为字符串
@@ -47,3 +49,7 @@ export function mergeObjects<T extends object, U extends object>(obj1: T, obj2: 
     return result;
 }
 
+export function equalObjectJson(obj1, obj2): boolean {
+    const areEqual = JSON.stringify(obj1) === JSON.stringify(obj2);
+    return areEqual;
+}

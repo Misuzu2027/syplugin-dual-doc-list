@@ -2,7 +2,7 @@
     import { onDestroy, onMount } from "svelte";
     import { DocumentTreeItemInfo } from "@/models/document-model";
     import {
-        escapeAttr,
+        escapeHTML,
         highlightElementTextByCss,
         scrollByRange,
     } from "@/utils/html-util";
@@ -35,6 +35,7 @@
     import { hasClosestByTag } from "@/libs/siyuan/hasClosest";
     import { delayedTwiceRefresh } from "@/utils/timing-util";
     import { SettingService } from "@/service/setting/SettingService";
+    import { PathHistory } from "@/models/PathHistory";
 
     let rootElement: HTMLElement;
     let lastSelectDocItemIndex: number = -1;
@@ -45,6 +46,9 @@
     let documentItems: DocumentTreeItemInfo[] = [];
     let lastOpenBlockId: string;
     let previewProtyleMatchFocusIndex = 0;
+    let backPathButtonEnable: boolean = false;
+
+    let pathHistory: PathHistory = new PathHistory();
 
     let lockPath: boolean = false;
     let lockSortOrder: boolean = false;
@@ -221,6 +225,7 @@
         notebookId: string,
         docId: string,
         docPath: string,
+        updateHistory: boolean = true,
     ) {
         if (lockPath) {
             return;
@@ -230,6 +235,11 @@
         curPathNotebookId = notebookId;
         curPathDocId = docId;
         curPathDocPath = docPath;
+
+        if (updateHistory) {
+            pathHistory.switchPath({ notebookId, docId, docPath });
+        }
+        backPathButtonEnable = pathHistory.getHistoryLength() > 1;
 
         let docSortMethodTemp =
             SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
@@ -244,9 +254,12 @@
             }
             docSortMethodTemp = convertNumberToSordMode(notebookSort);
             curNotebookSortMethod = docSortMethodTemp;
+        } else {
+            curNotebookSortMethod = null;
         }
 
-        if (!curNotebookSortMethod || !lockSortOrder) {
+        // 没有锁定排序 或则 当前笔记本排序方式不为空。
+        if (!lockSortOrder || !curNotebookSortMethod) {
             curPathSortMethod = docSortMethodTemp;
         }
 
@@ -272,13 +285,22 @@
             curPathSortMethod =
                 SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
         }
-        updateDocList(
-            curPathNotebookId,
-            curPathDocId,
-            curPathDocPath,
-            searchInputKey,
-            curPathSortMethod,
-        );
+        switchPath(null, null, null);
+        // updateDocList(
+        //     curPathNotebookId,
+        //     curPathDocId,
+        //     curPathDocPath,
+        //     searchInputKey,
+        //     curPathSortMethod,
+        // );
+    }
+
+    function backPath() {
+        let pathObj = pathHistory.back();
+        if (!pathObj) {
+            return;
+        }
+        switchPath(pathObj.notebookId, pathObj.docId, pathObj.docPath, false);
     }
 
     let clickTimeoutId: NodeJS.Timeout | undefined;
@@ -661,6 +683,7 @@
 
         waitRefreshByDatabase = false;
 
+        lastSelectDocItemIndex = -1;
         // 每次查询改为1，防止因为异常，加载图案不会消失。
         isSearching = 1;
         lastKeywords = keywords;
@@ -1040,6 +1063,14 @@
                     >全部文档
                 </button>
             </div>
+            <div class="fn__space"></div>
+            <button
+                class="ariaLabel toolbar__item
+                {backPathButtonEnable ? '' : 'toolbar__item--disabled'}"
+                on:click={backPath}
+            >
+                <svg><use xlink:href="#iconBack"></use></svg>
+            </button>
         </div>
         <!-- 搜索框 -->
         <div
@@ -1094,7 +1125,8 @@
             >
                 <li
                     data-node-id={item.fileBlock.id}
-                    data-block-name={escapeAttr(item.fileBlock.name)}
+                    data-name={escapeHTML(item.fileBlock.content) + ".sy"}
+                    data-block-name={escapeHTML(item.fileBlock.name)}
                     data-count={item.fileBlock.subFileCount}
                     data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
@@ -1106,6 +1138,9 @@
                     on:dragstart={docListItemDragstartEvent}
                     on:dragend={docListItemDragendEvent}
                 >
+                    <!-- {#if item.fileBlock.subFileCount > 0}
+                        
+                    {/if} -->
                     <span class="b3-list-item__icon">
                         {#if item.icon}
                             {@html item.icon}
@@ -1114,20 +1149,20 @@
                         {/if}
                     </span>
                     <span
-                        class="b3-list-item__text ariaLabel"
+                        class="b3-list-item__text ariaLabel document-title"
                         data-position="parentE"
                         aria-label={item.ariaLabel}
                     >
                         {@html item.fileBlock.content}
                     </span>
 
-                    {#if item.refCount}
+                    {#if item.fileBlock.refCount}
                         <span
                             class="popover__block counter b3-tooltips b3-tooltips__nw"
                             aria-label={EnvConfig.ins.i18n.reference}
                             style=""
                         >
-                            {item.refCount}
+                            {item.fileBlock.refCount}
                         </span>
                     {/if}
                 </li>

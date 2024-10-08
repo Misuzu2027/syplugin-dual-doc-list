@@ -7,6 +7,83 @@ export const escapeAttr = (html: string) => {
     }
     return html.replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 };
+
+export function escapeHTML(html: string): string {
+    let length = html.length;
+    let start = 0;
+    let i = 0;
+    let inited = false;
+    
+    let ret: Uint8Array | string = html;
+    
+    const amp = new TextEncoder().encode('&amp;');
+    const lt = new TextEncoder().encode('&lt;');
+    const gt = new TextEncoder().encode('&gt;');
+    const quot = new TextEncoder().encode('&quot;');
+    
+    const htmlBytes = new TextEncoder().encode(html);
+
+    for (; i < length; i++) {
+        switch (html.charCodeAt(i)) {
+            case 38: // '&' ASCII
+                if (!inited) {
+                    ret = new Uint8Array(length + 128);
+                    inited = true;
+                    (ret as Uint8Array).set(htmlBytes.subarray(0, i), 0);
+                }
+                ret = concatUint8Array(ret as Uint8Array, htmlBytes.subarray(start, i));
+                ret = concatUint8Array(ret as Uint8Array, amp);
+                start = i + 1;
+                break;
+            case 60: // '<' ASCII
+                if (!inited) {
+                    ret = new Uint8Array(length + 128);
+                    inited = true;
+                    (ret as Uint8Array).set(htmlBytes.subarray(0, i), 0);
+                }
+                ret = concatUint8Array(ret as Uint8Array, htmlBytes.subarray(start, i));
+                ret = concatUint8Array(ret as Uint8Array, lt);
+                start = i + 1;
+                break;
+            case 62: // '>' ASCII
+                if (!inited) {
+                    ret = new Uint8Array(length + 128);
+                    inited = true;
+                    (ret as Uint8Array).set(htmlBytes.subarray(0, i), 0);
+                }
+                ret = concatUint8Array(ret as Uint8Array, htmlBytes.subarray(start, i));
+                ret = concatUint8Array(ret as Uint8Array, gt);
+                start = i + 1;
+                break;
+            case 34: // '"' ASCII
+                if (!inited) {
+                    ret = new Uint8Array(length + 128);
+                    inited = true;
+                    (ret as Uint8Array).set(htmlBytes.subarray(0, i), 0);
+                }
+                ret = concatUint8Array(ret as Uint8Array, htmlBytes.subarray(start, i));
+                ret = concatUint8Array(ret as Uint8Array, quot);
+                start = i + 1;
+                break;
+        }
+    }
+
+    if (inited) {
+        ret = concatUint8Array(ret as Uint8Array, htmlBytes.subarray(start));
+    }
+
+    // 将结果 Uint8Array 转回字符串
+    return inited ? new TextDecoder().decode(ret as Uint8Array) : html;
+}
+
+function concatUint8Array(arr1: Uint8Array, arr2: Uint8Array): Uint8Array {
+    let result = new Uint8Array(arr1.length + arr2.length);
+    result.set(arr1, 0);
+    result.set(arr2, arr1.length);
+    return result;
+}
+
+
 export async function highlightElementTextByCss(
     contentElement: HTMLElement,
     keywords: string[],
