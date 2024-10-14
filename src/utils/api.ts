@@ -106,6 +106,19 @@ export async function createDocWithMd(notebook: NotebookId, path: string, markdo
     return request(url, data);
 }
 
+export async function createDoc(notebook: NotebookId, path: string, title: string, md: string, sorts: string[]): Promise<DocumentId> {
+    let data = {
+        notebook: notebook,
+        path: path,
+        title: title,
+        md: md,
+        sorts: sorts
+    };
+    let url = '/api/filetree/createDoc';
+    return request(url, data);
+}
+
+
 
 export async function renameDoc(notebook: NotebookId, path: string, title: string): Promise<DocumentId> {
     let data = {

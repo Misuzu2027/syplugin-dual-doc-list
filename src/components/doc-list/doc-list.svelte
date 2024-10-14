@@ -29,14 +29,18 @@
         isStrNotBlank,
         splitKeywordStringToArray,
     } from "@/utils/string-util";
-    import { getBlockByID, getDocInfo } from "@/utils/api";
+    import { createDoc, getBlockByID, getDocInfo } from "@/utils/api";
     import { SiyuanConstants } from "@/models/siyuan-constant";
-    import { convertNumberToSordMode } from "@/utils/siyuan-util";
+    import {
+        convertNumberToSordMode,
+        getParentPath,
+    } from "@/utils/siyuan-util";
     import { isTouchDevice } from "@/libs/siyuan/functions";
     import { hasClosestByTag } from "@/libs/siyuan/hasClosest";
     import { delayedTwiceRefresh } from "@/utils/timing-util";
     import { SettingService } from "@/service/setting/SettingService";
     import { PathHistory } from "@/models/PathHistory";
+    import { getDisplayName, pathPosix } from "@/libs/siyuan/pathName";
 
     let rootElement: HTMLElement;
     let lastSelectDocItemIndex: number = -1;
@@ -62,6 +66,7 @@
     let curPathSortMethod: DocumentSortMode;
     let curNotebookSortMethod: DocumentSortMode;
     let waitRefreshByDatabase: boolean = false;
+    let waitRefreshSelectDocId: string = null;
 
     onMount(async () => {
         showSubDocOfSubDoc =
@@ -199,24 +204,12 @@
                 break;
             case "databaseIndexCommit":
                 if (waitRefreshByDatabase) {
-                    console.log("databaseIndexCommit");
                     refreshDocList();
                 }
                 break;
         }
         if (waitRefreshByDatabase) {
-            let showSubDocuments = false;
-            let fullTextSearch = false;
-
-            if (
-                isQueryDocByPathApi(
-                    showSubDocuments,
-                    curPathNotebookId,
-                    curPathDocPath,
-                    lastKeywords,
-                    fullTextSearch,
-                )
-            ) {
+            if (localIsQueryDocByPathApi()) {
                 refreshDocList();
             }
         }
@@ -310,6 +303,53 @@
             return;
         }
         switchPath(pathObj.notebookId, pathObj.docId, pathObj.docPath, false);
+    }
+
+    async function createSiblingDocClick(
+        event: MouseEvent,
+        item: DocumentTreeItemInfo,
+    ) {
+        if (!event) return;
+        event.stopPropagation();
+        event.preventDefault();
+
+        if (!item) {
+            return;
+        }
+
+        let notebook = item.fileBlock.box;
+        let path = item.fileBlock.path;
+        if (isStrBlank(notebook) || isStrBlank(path)) {
+            return;
+        }
+        let parentPath = getParentPath(path);
+        let title = window.siyuan.languages.untitled;
+
+        const id = Lute.NewNodeID();
+        const newPath = pathPosix().join(
+            getDisplayName(parentPath, false, true),
+            id + ".sy",
+        );
+
+        let docId = (await createDoc(notebook, newPath, title, "", null)).id;
+        if (isStrBlank(docId)) {
+            return;
+        }
+
+        let actions: TProtyleAction[] = [
+            Constants.CB_GET_CONTEXT,
+            Constants.CB_GET_OPENNEW,
+        ];
+
+        await openBlockTab(docId, null, actions);
+
+        if (localIsQueryDocByPathApi()) {
+            await refreshDocList();
+            docListSelectDocById(docId);
+        } else {
+            waitRefreshByDatabase = true;
+            waitRefreshSelectDocId = docId;
+        }
     }
 
     let clickTimeoutId: NodeJS.Timeout | undefined;
@@ -437,11 +477,11 @@
     async function openBlockTab(
         blockId: string,
         tabPosition: "right" | "bottom",
+        actions?: TProtyleAction[],
     ) {
-        let actions: TProtyleAction[] = [
-            Constants.CB_GET_FOCUS,
-            Constants.CB_GET_SCROLL,
-        ];
+        if (isArrayEmpty(actions)) {
+            actions = [Constants.CB_GET_FOCUS, Constants.CB_GET_SCROLL];
+        }
 
         if (EnvConfig.ins.isMobile) {
             openMobileFileById(EnvConfig.ins.app, blockId, actions);
@@ -560,7 +600,7 @@
         return _getInstanceById(layout, id);
     };
 
-    async function selectCurDoc() {
+    async function docListSelectCurDoc() {
         const element =
             document.querySelector(
                 ".layout__wnd--active > .fn__flex > .layout-tab-bar > .item--focus",
@@ -586,9 +626,16 @@
         let parentDocId = getDocIdByPath(parentDocPath);
 
         await switchPath(notebookId, parentDocId, parentDocPath);
+        docListSelectDocById(docId);
+    }
+
+    function docListSelectDocById(docId: string) {
         const docLiElement = rootElement.querySelector(
             `li[data-node-id="${docId}"]`,
         ) as HTMLElement;
+        if (!docLiElement) {
+            return;
+        }
         docLiElement.classList.add("b3-list-item--focus");
 
         let docListElement = docLiElement.parentElement.parentElement;
@@ -606,26 +653,6 @@
         } else {
             docListElement.scrollTop = 0;
         }
-    }
-
-    function getParentPath(path: string): string {
-        if (isStrBlank(path)) {
-            return null;
-        }
-        // 将路径按斜杠分割
-        const parts = path.split("/");
-
-        if (parts.length <= 1) {
-            return "/"; // 如果没有多余的路径部分，返回根路径
-        }
-
-        // 获取倒数第二部分并保留其后缀
-        const secondLast = parts[parts.length - 2];
-        const last = parts[parts.length - 1];
-
-        // 提取后缀，合并成新的路径
-        const suffix = last.split(".").pop();
-        return `/${parts.slice(1, -2).join("/")}/${secondLast}.${suffix}`;
     }
 
     function getDocIdByPath(path: string) {
@@ -676,6 +703,10 @@
             searchInputKey,
             curPathSortMethod,
         );
+        if (isStrBlank(waitRefreshSelectDocId)) {
+            docListSelectDocById(waitRefreshSelectDocId);
+            waitRefreshSelectDocId = null;
+        }
     }
 
     async function updateDocList(
@@ -964,6 +995,19 @@
                 item.remove();
             });
     }
+
+    function localIsQueryDocByPathApi(): boolean {
+        let showSubDocuments = showSubDocOfSubDoc;
+        let fullTextSearch = SettingService.ins.SettingConfig.fullTextSearch;
+
+        return isQueryDocByPathApi(
+            showSubDocuments,
+            curPathNotebookId,
+            curPathDocPath,
+            lastKeywords,
+            fullTextSearch,
+        );
+    }
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -988,7 +1032,7 @@
                 class="block__icon ariaLabel"
                 aria-label="定位打开的文档 "
                 style="opacity: 1;"
-                on:click={selectCurDoc}
+                on:click={docListSelectCurDoc}
                 on:keydown={handleKeyDownDefault}
                 ><svg><use xlink:href="#iconFocus"></use></svg></span
             >
@@ -1141,7 +1185,7 @@
                     data-count={item.fileBlock.subFileCount}
                     data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px;"
-                    class="b3-list-item"
+                    class="b3-list-item b3-list-item--hide-action"
                     draggable="true"
                     data-path={item.fileBlock.path}
                     on:click={docItemClick}
@@ -1167,6 +1211,16 @@
                         {@html item.fileBlock.content}
                     </span>
 
+                    <span
+                        class="b3-list-item__action b3-tooltips b3-tooltips__nw"
+                        aria-label="新建同级文档"
+                        on:click={(event) => {
+                            createSiblingDocClick(event, item);
+                        }}
+                        on:keydown={handleKeyDownDefault}
+                    >
+                        <svg><use xlink:href="#iconAdd"></use></svg>
+                    </span>
                     {#if item.fileBlock.refCount}
                         <span
                             class="popover__block counter b3-tooltips b3-tooltips__nw"

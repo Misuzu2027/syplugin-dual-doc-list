@@ -1,6 +1,6 @@
 import { EnvConfig } from "@/config/EnvConfig";
 import { isArrayEmpty } from "@/utils/array-util";
-import { removePrefixAndSuffix } from "@/utils/string-util";
+import { isStrBlank, removePrefixAndSuffix } from "@/utils/string-util";
 
 export function getActiveTab(): HTMLDivElement {
     let tab = document.querySelector("div.layout__wnd--active ul.layout-tab-bar>li.item--focus");
@@ -345,5 +345,39 @@ export function isElementHidden(element: Element) {
     }
 
     return isElementHidden(element.parentElement);
+}
+
+
+export function getParentPath(path: string): string {
+    if (isStrBlank(path)) {
+        return null;
+    }
+    // 将路径按斜杠分割
+    const parts = path.split("/");
+
+    if (parts.length <= 2) {
+        console.log(`getParentPath oldPath : ${path}, newPath : /`)
+
+        return "/"; // 如果没有多余的路径部分，返回根路径
+    }
+
+    // 获取倒数第二部分并保留其后缀
+    const secondLast = parts[parts.length - 2];
+    const last = parts[parts.length - 1];
+
+    // 提取后缀，合并成新的路径
+    const suffix = last.split(".").pop();
+
+    let prefixPath = parts.slice(0, -2).join("/");
+
+    let newLast = "";
+    if (secondLast) {
+        newLast = `/${secondLast}.${suffix}`;
+    }
+
+    let parentPath = prefixPath + newLast
+    console.log(`getParentPath oldPath : ${path}, newPath : ${parentPath}`)
+
+    return parentPath;
 }
 
