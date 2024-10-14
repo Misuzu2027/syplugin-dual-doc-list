@@ -106,7 +106,7 @@ export async function createDocWithMd(notebook: NotebookId, path: string, markdo
     return request(url, data);
 }
 
-export async function createDoc(notebook: NotebookId, path: string, title: string, md: string, sorts: string[]): Promise<DocumentId> {
+export async function createDoc(notebook: NotebookId, path: string, title: string, md: string, sorts: string[]): Promise<{ id: DocumentId }> {
     let data = {
         notebook: notebook,
         path: path,

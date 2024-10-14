@@ -130,6 +130,9 @@ export async function queryDocumentByDb(
 
 async function setBlockRefCount(fileBlockResults: FileBlock[]) {
     const startTime = performance.now(); // 记录开始时间
+    if (isArrayEmpty(fileBlockResults)) {
+        return;
+    }
     let ids = [];
     for (const block of fileBlockResults) {
         if (block && isNumberNotValid(block.refCount)) {
@@ -162,6 +165,9 @@ async function setBlockRefCount(fileBlockResults: FileBlock[]) {
 
 async function setBlockSubFileCount(fileBlockResults: FileBlock[], notebookId: NotebookId, docPath: string) {
     const startTime = performance.now(); // 记录开始时间
+    if (isArrayEmpty(fileBlockResults)) {
+        return;
+    }
     let notebookPathSet = new Set<string>();
     if (isStrNotBlank(notebookId)) {
         let path = "";
