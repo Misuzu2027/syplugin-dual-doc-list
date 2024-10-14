@@ -32,6 +32,7 @@
     import { createDoc, getBlockByID, getDocInfo } from "@/utils/api";
     import { SiyuanConstants } from "@/models/siyuan-constant";
     import {
+    clearSyFileTreeItemFocus,
         convertNumberToSordMode,
         getParentPath,
     } from "@/utils/siyuan-util";
@@ -459,15 +460,6 @@
 
     function clearItemFocus() {
         rootElement
-            .querySelectorAll("li.b3-list-item--focus")
-            .forEach((liItem) => {
-                liItem.classList.remove("b3-list-item--focus");
-            });
-    }
-
-    function clearSyFileTreeItemFocus() {
-        document
-            .querySelector("div.file-tree.sy__file")
             .querySelectorAll("li.b3-list-item--focus")
             .forEach((liItem) => {
                 liItem.classList.remove("b3-list-item--focus");

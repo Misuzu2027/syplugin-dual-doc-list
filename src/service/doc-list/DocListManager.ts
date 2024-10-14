@@ -6,7 +6,7 @@ import { SettingConfig } from "@/models/setting-model";
 import { SettingService } from "@/service/setting/SettingService";
 import { findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
 import Instance from "@/utils/Instance";
-import { isElementHidden } from "@/utils/siyuan-util";
+import { clearSyFileTreeItemFocus, isElementHidden } from "@/utils/siyuan-util";
 
 const EmbedDualDocListElementAttrName = "data-misuzu2027-embed-dualDocList";
 
@@ -278,6 +278,7 @@ function getDragElement(): HTMLElement {
         if (!fileTreeDocElement || !docListElement) {
             return;
         }
+        clearSyFileTreeItemFocus();
         startX = e.clientX;
         // 获取当前 flex-item 的初始宽度
         startWidth = docListElement.offsetWidth;
@@ -317,7 +318,8 @@ function getDragElement(): HTMLElement {
         if (newWidth > containerWidth - 1) {
             return;
         }
-        let anotherWidth = containerWidth - newWidth;
+        let anotherWidth = fileTreeDocElement.offsetWidth;
+
         let newFlexGrow = newWidth / anotherWidth
         if (deltaX > 0 && newFlexGrow < startFlexGrow) {
             //return
