@@ -1,3 +1,4 @@
+import { DocListManager } from "@/service/doc-list/DocListManager";
 import { ItemProperty, IOption, TabProperty } from "./setting-model";
 
 export function getSettingTabArray(): TabProperty[] {
@@ -12,6 +13,8 @@ export function getSettingTabArray(): TabProperty[] {
                 new ItemProperty({ key: "showEmbedDualDocList", type: "switch", name: "显示嵌入的二级文档列表", description: "", tips: "" }),
 
                 new ItemProperty({ key: "doubleClickToggleNotebook", type: "switch", name: "双击展开/折叠笔记本", description: "", tips: "" }),
+
+                new ItemProperty({ key: "dualDocListDockPosition", type: "select", name: "二级文档列表Dock", description: "修改后会刷新界面", tips: "", options: getDockPositionElement(), afterUpdateCallback: dualDocListDockPositionAfterUpdate }),
 
             ]
 
@@ -40,6 +43,27 @@ export function getSettingTabArray(): TabProperty[] {
     );
 
     return tabProperties;
+}
+
+function dualDocListDockPositionAfterUpdate(key, value) {
+    DocListManager.ins.refreshDocListDock(value);
+}
+
+
+function getDockPositionElement(): IOption[] {
+
+    let options: IOption[] = [];
+    options.push({
+        name: "隐藏",
+        value: "Hidden",
+    });
+    options.push({
+        name: "显示",
+        value: "RightTop",
+    });
+
+
+    return options;
 }
 
 

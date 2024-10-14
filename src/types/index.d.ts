@@ -8,6 +8,7 @@
  */
 
 
+
 type DocumentId = string;
 type BlockId = string;
 type NotebookId = string;
@@ -160,3 +161,6 @@ interface ITreeNode {
 interface IDocTreeResp {
     tree: ITreeNode[];
 }
+
+
+type DockPosition = "Hidden" | "LeftTop" | "LeftBottom" | "RightTop" | "RightBottom" | "BottomLeft" | "BottomRight";

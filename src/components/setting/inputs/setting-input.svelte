@@ -12,12 +12,15 @@
         if (changeTimeoutId) {
             clearTimeout(changeTimeoutId);
         }
-        changeTimeoutId = setTimeout(() => {
+        changeTimeoutId = setTimeout(async () => {
             changeTimeoutId = null;
-            SettingService.ins.updateSettingCofnigValue(
+            await SettingService.ins.updateSettingCofnigValue(
                 itemProperty.key,
                 inputValue,
             );
+            if (itemProperty.afterUpdateCallback) {
+                itemProperty.afterUpdateCallback(itemProperty.key, inputValue);
+            }
         }, 450);
     }
 </script>

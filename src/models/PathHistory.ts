@@ -30,7 +30,7 @@ export class PathHistory {
             return null; // 如果路径历史不足2个，不能回退
         }
 
-        // 将最近两个路径存入前进栈
+        // 将最近1个路径存入前进栈
         this.forwardHistory.push(this.history.pop());
         // let backPath = this.history.pop() 
         // this.forwardHistory.push(backPath);
@@ -40,15 +40,16 @@ export class PathHistory {
 
     // 前进操作，从前进栈中恢复路径
     forward(): INotebookPath | null {
-        if (this.forwardHistory.length < 2) {
-            return null; // 如果前进栈不足两个，无法前进
+        if (this.forwardHistory.length < 1) {
+            return null; // 如果前进栈不足1个，无法前进
         }
 
         // 将前进栈中的路径重新加入到历史栈
-        this.history.push(this.forwardHistory.pop());
+        let path = this.forwardHistory.pop();
+        this.history.push(path);
         // this.history.push(this.forwardHistory.pop() as string);
 
-        return this.history[this.history.length - 1]; // 返回前进后的路径
+        return path; // 返回前进后的路径
     }
 
     // 获取当前路径

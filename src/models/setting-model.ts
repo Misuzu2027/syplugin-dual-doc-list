@@ -6,6 +6,8 @@ export class SettingConfig {
     showEmbedDualDocList: boolean;
     // 改为双击切换笔记本的折叠展开
     doubleClickToggleNotebook: boolean;
+    // 显示二级文档列表 Docker
+    dualDocListDockPosition: DockPosition;
 
     // 切换路径时使用笔记本排序方式。
     // lockSortMode: boolean;
@@ -17,8 +19,9 @@ export class SettingConfig {
     defaultDbQuerySortOrder: DocumentSortMode;
     // 显示所有文档时的数量限制
     allDocsQueryLimit: number;
+
     // 记忆文档的排序方式。
-    
+
     // 清空所有文档记忆的排序方式。
 
 
@@ -85,9 +88,10 @@ export class ItemProperty {
     max?: number;
     btndo?: () => void;
     options?: IOption[];
+    afterUpdateCallback?: (key, value) => void;
 
 
-    constructor({ key, type, name, description, tips, min, max, btndo, options }: ItemProperty) {
+    constructor({ key, type, name, description, tips, min, max, btndo, options, afterUpdateCallback }: ItemProperty) {
         this.key = key;
         this.type = type;
         this.min = min;
@@ -97,6 +101,7 @@ export class ItemProperty {
         this.name = name;
         this.description = description;
         this.tips = tips;
+        this.afterUpdateCallback = afterUpdateCallback;
     }
 
 }

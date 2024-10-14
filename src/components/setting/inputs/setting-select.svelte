@@ -5,8 +5,14 @@
     export let itemProperty: ItemProperty;
     let value = SettingService.ins.SettingConfig[itemProperty.key];
 
-    function selectChange() {
-        SettingService.ins.updateSettingCofnigValue(itemProperty.key, value);
+    async function selectChange() {
+        await SettingService.ins.updateSettingCofnigValue(
+            itemProperty.key,
+            value,
+        );
+        if (itemProperty.afterUpdateCallback) {
+            itemProperty.afterUpdateCallback(itemProperty.key, value);
+        }
     }
 </script>
 

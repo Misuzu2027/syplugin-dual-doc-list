@@ -60,3 +60,22 @@
     /* 悬浮时显示下划线 */
     text-decoration: underline;
 }
+
+.drag-handle {
+    width: 7px;
+    margin: 0 -2px 0 0;
+    height: auto;
+    background-color: gray;
+    cursor: col-resize;
+    opacity: 0;
+    /* 初始隐藏 */
+    transition: opacity 0.1s ease;
+    /* 过渡效果 */
+}
+
+/* 当悬浮在 .flex-item 上时显示拖拽条 */
+.drag-handle:hover {
+    // opacity: 1;
+
+    /* 悬浮时显示 */
+}

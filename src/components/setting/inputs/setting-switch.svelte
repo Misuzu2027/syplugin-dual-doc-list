@@ -5,8 +5,14 @@
     export let itemProperty: ItemProperty;
     let checked = SettingService.ins.SettingConfig[itemProperty.key];
 
-    function selectChange() {
-        SettingService.ins.updateSettingCofnigValue(itemProperty.key, checked);
+    async function selectChange() {
+        await SettingService.ins.updateSettingCofnigValue(
+            itemProperty.key,
+            checked,
+        );
+        if (itemProperty.afterUpdateCallback) {
+            itemProperty.afterUpdateCallback(itemProperty.key, checked);
+        }
     }
 </script>
 

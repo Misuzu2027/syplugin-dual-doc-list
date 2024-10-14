@@ -108,6 +108,7 @@ function getDefaultSettingConfig() {
     let defaultConfig = new SettingConfig();
     defaultConfig.showEmbedDualDocList = true;
     defaultConfig.doubleClickToggleNotebook = false;
+    defaultConfig.dualDocListDockPosition = "Hidden";
 
     // defaultConfig.lockSortMode = false;
     defaultConfig.showSubDocOfSubDoc = false;

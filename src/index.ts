@@ -2,7 +2,7 @@ import {
     Plugin,
 } from "siyuan";
 import "@/index.scss";
-import { DocListManager } from "./components/doc-list/DocListManager";
+import { DocListManager } from "./service/doc-list/DocListManager";
 import { EnvConfig } from "./config/EnvConfig";
 import { CUSTOM_ICON_MAP } from "./models/icon-constant";
 import { openSettingsDialog } from "./components/setting/SettingManager";
@@ -14,7 +14,7 @@ export default class PluginSample extends Plugin {
 
     async onload() {
         EnvConfig.ins.init(this);
-        SettingService.ins.init();
+        await SettingService.ins.init();
         DocListManager.ins.init();
 
         // 图标的制作参见帮助文档

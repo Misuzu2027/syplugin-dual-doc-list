@@ -12,7 +12,9 @@
     SettingService.ins.init();
 
     function handleKeyDownDefault(event) {
-        console.log(event.key);
+        if (event) {
+        }
+        // console.log(event.key);
     }
 </script>
 

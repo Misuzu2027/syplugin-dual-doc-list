@@ -2,6 +2,7 @@
     import { onDestroy, onMount } from "svelte";
     import { DocumentTreeItemInfo } from "@/models/document-model";
     import {
+        clearCssHighlights,
         escapeHTML,
         highlightElementTextByCss,
         scrollByRange,
@@ -297,6 +298,14 @@
 
     function backPath() {
         let pathObj = pathHistory.back();
+        if (!pathObj) {
+            return;
+        }
+        switchPath(pathObj.notebookId, pathObj.docId, pathObj.docPath, false);
+    }
+
+    function forwardPath() {
+        let pathObj = pathHistory.forward();
         if (!pathObj) {
             return;
         }
@@ -835,6 +844,7 @@
     function clearDocumentSearchInput() {
         searchInputKey = "";
         refreshDocListBySearchKey(searchInputKey);
+        clearCssHighlights();
     }
     function handleKeyDownDefault() {}
 
@@ -960,7 +970,7 @@
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <div
     class="fn__flex-column misuzu2027__doc-list"
-    style="height: 100%;"
+    style="height: 100%;width: calc(100% - 7px);"
     bind:this={rootElement}
 >
     <div class="flat_doc_tree--top">
@@ -1068,6 +1078,7 @@
                 class="ariaLabel toolbar__item
                 {backPathButtonEnable ? '' : 'toolbar__item--disabled'}"
                 on:click={backPath}
+                on:contextmenu={forwardPath}
             >
                 <svg><use xlink:href="#iconBack"></use></svg>
             </button>
@@ -1129,7 +1140,7 @@
                     data-block-name={escapeHTML(item.fileBlock.name)}
                     data-count={item.fileBlock.subFileCount}
                     data-type="navigation-file"
-                    style="--file-toggle-width:40px;height:32px;padding:2px 5px;"
+                    style="--file-toggle-width:40px;height:32px;padding:2px;"
                     class="b3-list-item"
                     draggable="true"
                     data-path={item.fileBlock.path}
@@ -1193,6 +1204,7 @@
         overflow-x: auto; /* 允许横向滚动 */
         user-select: text;
         min-height: 28px;
+        padding: 0px 4px;
     }
 
     .counter-badge {
