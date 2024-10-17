@@ -383,7 +383,7 @@ export function getParentPath(path: string): string {
 
 
 
-export function clearSyFileTreeItemFocus() {
+export function clearSyFileTreeItemFocusClass() {
     document
         .querySelector("div.file-tree.sy__file")
         .querySelectorAll("li.b3-list-item--focus")

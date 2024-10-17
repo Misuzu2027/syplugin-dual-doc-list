@@ -1,4 +1,5 @@
 import { isArrayEmpty } from "./array-util";
+import { isNumberValid } from "./number-util";
 import { isStrBlank } from "./string-util";
 
 export const escapeAttr = (html: string) => {
@@ -13,14 +14,14 @@ export function escapeHTML(html: string): string {
     let start = 0;
     let i = 0;
     let inited = false;
-    
+
     let ret: Uint8Array | string = html;
-    
+
     const amp = new TextEncoder().encode('&amp;');
     const lt = new TextEncoder().encode('&lt;');
     const gt = new TextEncoder().encode('&gt;');
     const quot = new TextEncoder().encode('&quot;');
-    
+
     const htmlBytes = new TextEncoder().encode(html);
 
     for (; i < length; i++) {
@@ -165,14 +166,17 @@ export async function highlightElementTextByCss(
         return;
     }
     let matchFocusRange: Range;
-    let nextMatchIndexRemainder =
-        nextMatchFocusIndex % targetElementMatchRanges.length;
+    let nextMatchIndexRemainder = null;
+    if (isNumberValid(nextMatchFocusIndex) && targetElementMatchRanges.length > 0) {
+        nextMatchIndexRemainder = nextMatchFocusIndex % targetElementMatchRanges.length;
+    }
     for (let i = 0; i < targetElementMatchRanges.length; i++) {
         if (i == nextMatchIndexRemainder) {
             matchFocusRange = targetElementMatchRanges[i];
             break;
         }
     }
+
 
     allMatchRanges = allMatchRanges.filter(
         (obj) => obj !== matchFocusRange,

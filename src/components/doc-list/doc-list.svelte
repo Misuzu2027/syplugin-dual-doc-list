@@ -23,7 +23,7 @@
     } from "@/service/search/search-util";
     import { convertIconInIal } from "@/utils/icon-util";
     import { SETTING_DOCUMENT_LIST_SORT_METHOD_ELEMENT } from "@/models/setting-constant";
-    import { isArrayEmpty } from "@/utils/array-util";
+    import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
     import {
         isStrBlank,
         isStrNotBlank,
@@ -32,7 +32,7 @@
     import { createDoc, getBlockByID, getDocInfo } from "@/utils/api";
     import { SiyuanConstants } from "@/models/siyuan-constant";
     import {
-    clearSyFileTreeItemFocus,
+        clearSyFileTreeItemFocusClass,
         convertNumberToSordMode,
         getParentPath,
     } from "@/utils/siyuan-util";
@@ -58,7 +58,8 @@
 
     let lockPath: boolean = false;
     let lockSortOrder: boolean = false;
-    let showSubDocOfSubDoc: boolean = false;
+    let localShowSubDocOfSubDoc: boolean = false;
+    let localFullTextSearch: boolean = false;
     let showCurPath = "/";
 
     let curPathNotebookId: string;
@@ -70,8 +71,7 @@
     let waitRefreshSelectDocId: string = null;
 
     onMount(async () => {
-        showSubDocOfSubDoc =
-            SettingService.ins.SettingConfig.showSubDocOfSubDoc;
+        initData();
         initEvent();
         initSiyuanEventBus();
         switchPath(null, null, null);
@@ -81,6 +81,11 @@
         destorySiyuanEventBus();
     });
 
+    function initData() {
+        let settingConfig = SettingService.ins.SettingConfig;
+        localShowSubDocOfSubDoc = settingConfig.showSubDocOfSubDoc;
+        localFullTextSearch = settingConfig.fullTextSearch;
+    }
     function initEvent() {
         rootElement.addEventListener("mousedown", () => {
             window.siyuan.menus.menu.remove();
@@ -490,12 +495,13 @@
         if (lastOpenBlockId == blockId) {
             previewProtyleMatchFocusIndex++;
         } else {
-            previewProtyleMatchFocusIndex = 0;
+            previewProtyleMatchFocusIndex = -1;
         }
         lastOpenBlockId = blockId;
+        // 优化定位，搜索出来打开，第一次打开不定位，这样默认会是上一次的界面，防止一点开就定位到开头。
         // 如果被查找节点不是聚焦状态，节点文档是当前查看文档，节点的文档element 存在，文档element 包含查找的节点
         let activeDocTab = getActiveTab();
-        if (activeDocTab) {
+        if (isArrayNotEmpty(lastKeywords) && activeDocTab) {
             let activeDocContentElement = activeDocTab.querySelector(
                 "div.protyle-content",
             ) as HTMLElement;
@@ -508,15 +514,14 @@
                     lastKeywords,
                     previewProtyleMatchFocusIndex,
                 );
-
-                matchFocusRangePromise.then((focusRange) => {
-                    renderNextSearchMarkByRange(focusRange);
-                });
-
+                if (previewProtyleMatchFocusIndex >= 0) {
+                    matchFocusRangePromise.then((focusRange) => {
+                        renderNextSearchMarkByRange(focusRange);
+                    });
+                }
                 return;
             }
         }
-
         let docTabPromise: Promise<ITab> = openTab({
             app: EnvConfig.ins.app,
             doc: {
@@ -663,7 +668,12 @@
     }
 
     async function switchShowSubDocOfSubDoc() {
-        showSubDocOfSubDoc = !showSubDocOfSubDoc;
+        localShowSubDocOfSubDoc = !localShowSubDocOfSubDoc;
+        refreshDocList();
+    }
+
+    async function switchFullTextSearch() {
+        localFullTextSearch = !localFullTextSearch;
         refreshDocList();
     }
 
@@ -708,9 +718,10 @@
         searchKey: string,
         docSortMethod: DocumentSortMode,
     ) {
-        let settingConfig = SettingService.ins.SettingConfig;
-        let showSubDocuments = showSubDocOfSubDoc;
-        let fullTextSearch = settingConfig.fullTextSearch;
+        // let settingConfig = SettingService.ins.SettingConfig;
+        let showSubDocuments = localShowSubDocOfSubDoc;
+        let fullTextSearch = localFullTextSearch;
+        // let fullTextSearch = settingConfig.fullTextSearch;
         let keywords = splitKeywordStringToArray(searchKey);
 
         waitRefreshByDatabase = false;
@@ -764,7 +775,7 @@
                 docPath,
                 keywords,
                 showSubDocuments,
-                fullTextSearch,
+                localFullTextSearch,
                 docSortMethod,
             ).then((docTreeInfoArray) => {
                 documentItems = docTreeInfoArray;
@@ -872,21 +883,20 @@
     function handleKeyDownDefault() {}
 
     async function afterOpenDocTab(docTabPromise: Promise<ITab>) {
+        if (isArrayEmpty(lastKeywords)) {
+            return;
+        }
+        previewProtyleMatchFocusIndex = -1;
         let docTab = await docTabPromise;
-        // console.log("afterOpenDocTab");
         let lastDocumentContentElement = docTab.panelElement
             .children[1] as HTMLElement;
 
         delayedTwiceRefresh(() => {
-            let matchFocusRangePromise = highlightElementTextByCss(
+            highlightElementTextByCss(
                 lastDocumentContentElement,
                 lastKeywords,
-                0,
+                null,
             );
-
-            matchFocusRangePromise.then((focusRange) => {
-                renderFirstSearchMarkByRange(focusRange);
-            });
         }, 50);
     }
 
@@ -913,7 +923,7 @@
             .forEach((item) => {
                 item.remove();
             });
-        clearSyFileTreeItemFocus();
+        clearSyFileTreeItemFocusClass();
 
         // 下面全抄官方的，把 this.element 换成了 rootElement
         // https://github.com/siyuan-note/siyuan/blob/f3b0ee51d5fb505c852c7378ba85776d15e22b86/app/src/layout/dock/Files.ts#L371
@@ -989,7 +999,7 @@
     }
 
     function localIsQueryDocByPathApi(): boolean {
-        let showSubDocuments = showSubDocOfSubDoc;
+        let showSubDocuments = localShowSubDocOfSubDoc;
         let fullTextSearch = SettingService.ins.SettingConfig.fullTextSearch;
 
         return isQueryDocByPathApi(
@@ -1004,6 +1014,8 @@
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore a11y-label-has-associated-control -->
+
 <div
     class="fn__flex-column misuzu2027__doc-list"
     style="height: 100%;width: calc(100% - 7px);"
@@ -1029,45 +1041,75 @@
                 ><svg><use xlink:href="#iconFocus"></use></svg></span
             >
             <span class="fn__space"></span>
+            <span class="fn__space"></span>
             <label
-                class="block__icon ariaLabel"
+                class="block__icon ariaLabel {lockPath ? 'label-selected' : ''}"
                 aria-label="锁定当前路径 "
                 style="opacity: 1;"
+                on:click={() => {
+                    lockPath = !lockPath;
+                }}
+                on:keydown={handleKeyDownDefault}
                 ><svg><use xlink:href="#iconLockPath"></use></svg>
-                <span class="fn__space"></span>
-                <input
+                <!-- <span class="fn__space"></span> -->
+                <!-- <input
                     class="b3-switch fn__flex-center"
                     type="checkbox"
                     bind:checked={lockPath}
-                />
+                /> -->
             </label>
             <span class="fn__space"></span>
             <label
-                class="block__icon ariaLabel"
+                class="block__icon ariaLabel {lockSortOrder
+                    ? 'label-selected'
+                    : ''}"
                 aria-label="锁定排序方式"
                 style="opacity: 1;"
+                on:click={() => {
+                    lockSortOrder = !lockSortOrder;
+                }}
+                on:keydown={handleKeyDownDefault}
                 ><svg><use xlink:href="#iconLockSort"></use></svg>
-                <span class="fn__space"></span>
-                <input
+                <!-- <span class="fn__space"></span> -->
+                <!-- <input
                     class="b3-switch fn__flex-center"
                     type="checkbox"
                     bind:checked={lockSortOrder}
-                />
+                /> -->
             </label>
 
             <span class="fn__space"></span>
             <label
-                class="block__icon ariaLabel"
+                class="block__icon ariaLabel {localShowSubDocOfSubDoc
+                    ? 'label-selected'
+                    : ''}"
                 aria-label="显示子文档的子文档"
                 style="opacity: 1;"
+                on:click={switchShowSubDocOfSubDoc}
+                on:keydown={handleKeyDownDefault}
                 ><svg><use xlink:href="#iconShowSubDoc"></use></svg>
-                <span class="fn__space"></span>
-                <input
+
+                <!-- <span class="fn__space"></span> -->
+
+                <!-- <input
                     class="b3-switch fn__flex-center"
                     type="checkbox"
                     bind:checked={showSubDocOfSubDoc}
                     on:click={switchShowSubDocOfSubDoc}
-                />
+                /> -->
+            </label>
+            <span class="fn__space"></span>
+            <label
+                class="block__icon ariaLabel {localFullTextSearch
+                    ? 'label-selected'
+                    : ''}"
+                aria-label="使用全文搜索"
+                style="opacity: 1;"
+                on:click={switchFullTextSearch}
+                on:keydown={handleKeyDownDefault}
+                ><svg><use xlink:href="#iconFullTextSearch"></use></svg>
+
+                <!-- <span class="fn__space"></span> -->
             </label>
         </div>
         <!-- 路径信息 -->
@@ -1269,15 +1311,27 @@
         // box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* 添加阴影效果 */
     }
 
-    .block__icon {
-        padding: 4px 1px;
-    }
-    label.block__icon span.fn__space {
-        width: 4px;
+    // .block__icon {
+    //     padding: 4px 1px;
+    // }
+    // label.block__icon span.fn__space {
+    //     width: 4px;
+    // }
+
+    .misuzu2027__doc-list label.label-selected {
+        // border: 1px solid #66ccff; rgba(102, 204, 255, 0.5)
+        // box-shadow: inset 0 0 5px 2px var(--b3-theme-primary-light);
+        background-color: var(--b3-theme-primary-light);
+        transition: box-shadow 0.5s ease-in-out;
     }
 
     .b3-switch:hover:not(:disabled):before,
     .b3-switch:focus:not(:disabled):before {
         content: none;
+    }
+
+    .misuzu2027__doc-list .flat_doc_tree--top .block__icon svg {
+        height: 14px;
+        width: 14px;
     }
 </style>

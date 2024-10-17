@@ -6,7 +6,7 @@ import { SettingConfig } from "@/models/setting-model";
 import { SettingService } from "@/service/setting/SettingService";
 import { findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
 import Instance from "@/utils/Instance";
-import { clearSyFileTreeItemFocus, isElementHidden } from "@/utils/siyuan-util";
+import { clearSyFileTreeItemFocusClass, isElementHidden } from "@/utils/siyuan-util";
 
 const EmbedDualDocListElementAttrName = "data-misuzu2027-embed-dualDocList";
 
@@ -178,7 +178,7 @@ export class DocListManager {
         }
         // 如果是笔记本，判断一下是否启用双击切换文档折叠。
         if (targetLiElementType == "navigation-root") {
-            if (this.handleNotebookDoubleClick(event)) {
+            if (this.handleNotebookDoubleClick(event, targetLiElement)) {
                 return;
             }
         }
@@ -187,7 +187,7 @@ export class DocListManager {
     }
 
     // return ： 是否双击
-    private handleNotebookDoubleClick(event: MouseEvent): boolean {
+    private handleNotebookDoubleClick(event: MouseEvent, targetLiElement: HTMLElement): boolean {
         let settingConfig = SettingService.ins.SettingConfig;
         if (!settingConfig || !settingConfig.doubleClickToggleNotebook) {
             return false;
@@ -200,6 +200,8 @@ export class DocListManager {
             setTimeout(() => {
                 this.clickCount = 0;
             }, doubleClickTimeout);
+            clearSyFileTreeItemFocusClass();
+            targetLiElement.classList.add("b3-list-item--focus");
             return false;
         }
         return true;
@@ -278,7 +280,7 @@ function getDragElement(): HTMLElement {
         if (!fileTreeDocElement || !docListElement) {
             return;
         }
-        clearSyFileTreeItemFocus();
+        clearSyFileTreeItemFocusClass();
         startX = e.clientX;
         // 获取当前 flex-item 的初始宽度
         startWidth = docListElement.offsetWidth;
