@@ -1,29 +1,68 @@
+import { SiyuanConstants } from "@/models/siyuan-constant";
+import { isStrBlank, isStrNotBlank } from "./string-util";
+
+
+export function getNotebookIcon(iconStr: string): string {
+    if (isStrBlank(iconStr)) {
+        iconStr = SiyuanConstants.SIYUAN_IMAGE_NOTE;
+    }
+    let icon: string = null;
+    icon = convertIconInIal(iconStr);
+
+    return icon;
+}
+
+
+export function getDocIconHtmlByIal(ialStr: string, iconStr, subCount: number): string {
+
+
+    let iconHtml: string = null;
+    if (ialStr) {
+        let ial = convertIalStringToObject(ialStr);
+        iconHtml = convertIconInIal(ial.icon);
+    }
+    if (isStrBlank(iconHtml) && isStrNotBlank(iconStr)) {
+        iconHtml = convertIconInIal(iconStr);
+    }
+    if (isStrBlank(iconHtml)) {
+        let defFileIconStr = subCount && subCount > 0
+            ? SiyuanConstants.SIYUAN_IMAGE_FOLDER : SiyuanConstants.SIYUAN_IMAGE_FILE;
+        iconHtml = convertIconInIal(defFileIconStr);
+    }
+    if (!iconHtml.startsWith("<")) {
+        iconHtml = `<span class="b3-list-item__graphic">${iconHtml}</span>`;
+    }
+    return iconHtml;
+}
 
 export function convertIconInIal(icon: string): string {
-    if (icon) {
-        if (icon.includes(".")) {
-            // 如果包含 "."，则认为是图片，生成<img>标签
-            return `<img class="" src="/emojis/${icon}">`;
-        } else {
-            // 如果是Emoji，转换为表情符号
-            let emoji = "";
-            try {
-                icon.split("-").forEach(item => {
-                    if (item.length < 5) {
-                        emoji += String.fromCodePoint(parseInt("0" + item, 16));
-                    } else {
-                        emoji += String.fromCodePoint(parseInt(item, 16));
-                    }
-                });
-            } catch (e) {
-                // 自定义表情搜索报错 https://github.com/siyuan-note/siyuan/issues/5883
-                // 这里忽略错误不做处理
-            }
-            return emoji;
-        }
+    if (isStrBlank(icon)) {
+        return null;
     }
-    // 既不是Emoji也不是图片，返回null
-    return null;
+
+    if (icon.includes(".")) {
+        // 如果包含 "."，则认为是图片，生成<img>标签
+        return `<img class="b3-list-item__graphic" src="/emojis/${icon}">`;
+    } else if (icon.startsWith("api/icon/")) {
+        return `<img class="b3-list-item__graphic" src="${icon}">`;
+    } else {
+        // 如果是Emoji，转换为表情符号
+        let emoji = "";
+        try {
+            icon.split("-").forEach(item => {
+                if (item.length < 5) {
+                    emoji += String.fromCodePoint(parseInt("0" + item, 16));
+                } else {
+                    emoji += String.fromCodePoint(parseInt(item, 16));
+                }
+            });
+
+        } catch (e) {
+            // 自定义表情搜索报错 https://github.com/siyuan-note/siyuan/issues/5883
+            // 这里忽略错误不做处理
+        }
+        return emoji;
+    }
 }
 
 export function convertIalStringToObject(ial: string): { [key: string]: string } {

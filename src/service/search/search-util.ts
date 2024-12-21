@@ -2,12 +2,12 @@ import { EnvConfig } from "@/config/EnvConfig";
 import { BlockItem, DocumentQueryCriteria } from "@/models/search-model";
 import { getBlockIndex, getBlocksIndexes, listDocsByPath, listDocTree, sql } from "@/utils/api";
 import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
-import { convertIalStringToObject, convertIconInIal } from "@/utils/icon-util";
+import { getDocIconHtmlByIal } from "@/utils/icon-util";
 import { containsAllKeywords, isStrBlank, isStrNotBlank, } from "@/utils/string-util";
 import { generateDocumentListSql, generateGetRootBlockCountSql } from "./search-sql";
 import { DocumentTreeItemInfo } from "@/models/document-model";
 import { convertSordModeToNumber, getFileArialLabel, highlightBlockContent } from "@/utils/siyuan-util";
-import { SiyuanConstants } from "@/models/siyuan-constant";
+
 import { SettingService } from "../setting/SettingService";
 import { isNumberNotValid, isNumberValid } from "@/utils/number-util";
 
@@ -311,16 +311,17 @@ function processQueryResults(
         }
         highlightBlockContent(fileBlock, keywordArray);
 
-        let icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_FILE);
-        if (fileBlock.subFileCount && fileBlock.subFileCount > 0) {
-            icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_FOLDER);
-        }
-        if (fileBlock.ial) {
-            let ial = convertIalStringToObject(fileBlock.ial);
-            icon = convertIconInIal(ial.icon);
-        } else if (fileBlock.icon) {
-            icon = convertIconInIal(fileBlock.icon);
-        }
+        // let icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_FILE);
+        // if (fileBlock.subFileCount && fileBlock.subFileCount > 0) {
+        //     icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_FOLDER);
+        // }
+        // if (fileBlock.ial) {
+        //     let ial = convertIalStringToObject(fileBlock.ial);
+        //     icon = convertIconInIal(ial.icon);
+        // } else if (fileBlock.icon) {
+        //     icon = convertIconInIal(fileBlock.icon);
+        // }
+        let icon = getDocIconHtmlByIal(fileBlock.ial, fileBlock.icon, fileBlock.subFileCount);
 
         let notebookInfo = EnvConfig.ins.notebookMap.get(fileBlock.box);
         let boxName = fileBlock.box;

@@ -11,6 +11,7 @@
             checked,
         );
         if (itemProperty.afterUpdateCallback) {
+            console.log("111")
             itemProperty.afterUpdateCallback(itemProperty.key, checked);
         }
     }

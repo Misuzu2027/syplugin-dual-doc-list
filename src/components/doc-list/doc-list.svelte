@@ -21,7 +21,7 @@
         isQueryDocByPathApi,
         selectItemByArrowKeys,
     } from "@/service/search/search-util";
-    import { convertIconInIal } from "@/utils/icon-util";
+    import { getNotebookIcon } from "@/utils/icon-util";
     import { SETTING_DOCUMENT_LIST_SORT_METHOD_ELEMENT } from "@/models/setting-constant";
     import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
     import {
@@ -30,7 +30,6 @@
         splitKeywordStringToArray,
     } from "@/utils/string-util";
     import { createDoc, getBlockByID, getDocInfo } from "@/utils/api";
-    import { SiyuanConstants } from "@/models/siyuan-constant";
     import {
         clearSyFileTreeItemFocusClass,
         convertNumberToSordMode,
@@ -810,10 +809,9 @@
         if (!notebook) {
             return "";
         }
-        let icon = convertIconInIal(SiyuanConstants.SIYUAN_IMAGE_NOTE);
-        if (notebook.icon) {
-            icon = notebook.icon;
-        }
+
+        let icon = getNotebookIcon(notebook.icon);
+
         let iconHtml = `<span class="box-path__icon">${icon}</span>`;
         let nameHtml = `<span class="doc-path" data-path-type="box" data-id="${box}"> ${notebook.name}</span>`;
         let boxPathHtml = iconHtml + nameHtml;
@@ -900,9 +898,9 @@
         }, 50);
     }
 
-    function renderFirstSearchMarkByRange(matchRange: Range) {
-        scrollByRange(matchRange, "nearest");
-    }
+    // function renderFirstSearchMarkByRange(matchRange: Range) {
+    //     scrollByRange(matchRange, "nearest");
+    // }
 
     function renderNextSearchMarkByRange(matchRange: Range) {
         scrollByRange(matchRange, "center");
@@ -1231,11 +1229,7 @@
                         
                     {/if} -->
                     <span class="b3-list-item__icon">
-                        {#if item.icon}
-                            {@html item.icon}
-                        {:else}
-                            📄
-                        {/if}
+                        {@html item.icon}
                     </span>
                     <span
                         class="b3-list-item__text ariaLabel document-title"

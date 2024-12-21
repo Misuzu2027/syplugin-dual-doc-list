@@ -8,7 +8,7 @@
 
 import { fetchSyncPost, IWebSocketData } from "siyuan";
 import { isBoolean } from "./object-util";
-import { convertIconInIal } from "./icon-util";
+import { getNotebookIcon } from "./icon-util";
 
 
 
@@ -42,8 +42,6 @@ export function getNotebookMap(notebooks: INotebook[]): Map<string, INotebook> {
         return notebookMap;
     }
     for (const notebook of notebooks) {
-
-        notebook.icon = convertIconInIal(notebook.icon);
         notebookMap.set(notebook.id, notebook);
     }
     return notebookMap;

@@ -30,7 +30,7 @@ export class DocListManager {
     init() {
         this.initElementEventListener();
         this.initInterval();
-        addDocListDock();
+        // addDocListDock();
         addObserveCommonMenuElement();
     }
 
@@ -368,41 +368,46 @@ function addDocListDock() {
     let position: any = docSearchDockPoisition;
 
     let plugin = EnvConfig.ins.plugin;
-    let dockRet = plugin.addDock({
-        config: {
-            position: position,
-            size: { width: 260, height: 0 },
-            icon: CUSTOM_ICON_MAP.iconDualDocList.id,
-            title: "二级文档列表",
-            show: false,
-            hotkey: "⌥T",
-        },
-        data: {},
-        type: DOC_LIST_DOCK_TYPE,
-        resize() {
-            if (DocListManager.ins.dockDocListSvelte) {
-                DocListManager.ins.dockDocListSvelte.restView();
-            }
-        },
-        update() {
-            if (DocListManager.ins.dockDocListSvelte) {
-                DocListManager.ins.dockDocListSvelte.restView();
-            }
-        },
-        init() {
-            this.element.innerHTML = "";
-            DocListManager.ins.dockDocListSvelte = new DocListDockSvelte({
-                target: this.element,
-                props: {
+    try {
+
+        let dockRet = plugin.addDock({
+            config: {
+                position: position,
+                size: { width: 260, height: 0 },
+                icon: CUSTOM_ICON_MAP.iconDualDocList.id,
+                title: "二级文档列表",
+                show: false,
+                hotkey: "⌥T",
+            },
+            data: {},
+            type: DOC_LIST_DOCK_TYPE,
+            resize() {
+                if (DocListManager.ins.dockDocListSvelte) {
+                    DocListManager.ins.dockDocListSvelte.restView();
                 }
-            });
-        },
-        destroy() {
-            if (DocListManager.ins.dockDocListSvelte) {
-                DocListManager.ins.dockDocListSvelte.$destroy();
+            },
+            update() {
+                if (DocListManager.ins.dockDocListSvelte) {
+                    DocListManager.ins.dockDocListSvelte.restView();
+                }
+            },
+            init() {
+                this.element.innerHTML = "";
+                DocListManager.ins.dockDocListSvelte = new DocListDockSvelte({
+                    target: this.element,
+                    props: {
+                    }
+                });
+            },
+            destroy() {
+                if (DocListManager.ins.dockDocListSvelte) {
+                    DocListManager.ins.dockDocListSvelte.$destroy();
+                }
             }
-        }
-    });
+        });
+    } catch (e) {
+        console.log("addDock e", e)
+    }
 
 
     // plugin.addCommand({
