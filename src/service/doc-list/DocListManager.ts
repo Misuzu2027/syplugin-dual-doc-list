@@ -30,7 +30,7 @@ export class DocListManager {
     init() {
         this.initElementEventListener();
         this.initInterval();
-        // addDocListDock();
+        addDocListDock();
         addObserveCommonMenuElement();
     }
 
