@@ -2,15 +2,13 @@
   "name": "syplugin-dual-doc-list",
   "author": "Misuzu2027",
   "url": "https://github.com/Misuzu2027/syplugin-dual-doc-list",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "minAppVersion": "3.0.12",
   "backends": [
     "all"
   ],
   "frontends": [
-    "desktop",
-    "browser-desktop",
-    "desktop-window"
+    "all"
   ],
   "displayName": {
     "en_US": "Dual-Level Document List",

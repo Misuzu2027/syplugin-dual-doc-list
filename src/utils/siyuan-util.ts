@@ -1,6 +1,7 @@
 import { EnvConfig } from "@/config/EnvConfig";
 import { isArrayEmpty } from "@/utils/array-util";
 import { isStrBlank, removePrefixAndSuffix } from "@/utils/string-util";
+import { ITab } from "siyuan";
 
 export function getActiveTab(): HTMLDivElement {
     let tab = document.querySelector("div.layout__wnd--active ul.layout-tab-bar>li.item--focus");
@@ -381,8 +382,6 @@ export function getParentPath(path: string): string {
     return parentPath;
 }
 
-
-
 export function clearSyFileTreeItemFocusClass() {
     document
         .querySelector("div.file-tree.sy__file")
@@ -391,3 +390,49 @@ export function clearSyFileTreeItemFocusClass() {
             liItem.classList.remove("b3-list-item--focus");
         });
 }
+
+export const getDesktopCurDocProtyle = (): any => {
+    const element =
+        document.querySelector(
+            ".layout__wnd--active > .fn__flex > .layout-tab-bar > .item--focus",
+        ) || document.querySelector("ul.layout-tab-bar > .item--focus");
+    if (!element) {
+        return;
+    }
+    const tab = getInstanceById(element.getAttribute("data-id"));
+    if (
+        !tab ||
+        !tab.model ||
+        !tab.model.editor ||
+        !tab.model.editor.protyle
+    ) {
+        return;
+    }
+
+    return tab.model.editor.protyle;
+}
+
+
+export const getInstanceById = (
+    id: string,
+    layout = window.siyuan.layout.centerLayout,
+) => {
+    const _getInstanceById = (item: any, id: string) => {
+        if (item.id === id) {
+            return item;
+        }
+        if (!item.children) {
+            return;
+        }
+        let ret: ITab;
+        for (let i = 0; i < item.children.length; i++) {
+            ret = _getInstanceById(item.children[i], id) as ITab;
+            if (ret) {
+                return ret;
+            }
+        }
+    };
+    return _getInstanceById(layout, id);
+};
+
+

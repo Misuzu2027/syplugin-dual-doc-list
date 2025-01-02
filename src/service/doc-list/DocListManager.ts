@@ -2,7 +2,6 @@ import DocListSvelte from "@/components/doc-list/doc-list.svelte";
 import DocListDockSvelte from "@/components/siyuan/dock/doc-list-dock.svelte";
 import { EnvConfig } from "@/config/EnvConfig";
 import { CUSTOM_ICON_MAP } from "@/models/icon-constant";
-import { SettingConfig } from "@/models/setting-model";
 import { SettingService } from "@/service/setting/SettingService";
 import { findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
 import Instance from "@/utils/Instance";
@@ -54,6 +53,9 @@ export class DocListManager {
 
     initInterval() {
         this.destroyInterval();
+        if (EnvConfig.ins.isMobile) {
+            return;
+        }
         this.checkEmbedIntervalId = setInterval(() => this.intervalCheckEmbedDualDocList(), 800)
     }
 
@@ -155,7 +157,14 @@ export class DocListManager {
         if (event.button != 0 || event.ctrlKey) {
             return;
         }
+        if (EnvConfig.ins.isMobile) {
+            this.mobileGlobeClickEvent(event);
+        } else {
+            this.desktopGlobeClickEvent(event);
+        }
+    }
 
+    desktopGlobeClickEvent = (event: MouseEvent) => {
         let fileTreeDocElement = document.querySelector("#layouts  div.layout-tab-container div.file-tree.sy__file");
         let target = event.target as HTMLElement;
 
@@ -182,8 +191,40 @@ export class DocListManager {
                 return;
             }
         }
+        let notebookId: string = getAttributeRecursively(targetLiElement, "data-url");
+        let docId: string = targetLiElement.getAttribute("data-node-id");
+        let docPath: string = targetLiElement.getAttribute("data-path");
 
-        this.handleSelectDoc(targetLiElement)
+        this.handleSelectDoc(notebookId, docId, docPath)
+    }
+
+    mobileGlobeClickEvent = (event: MouseEvent) => {
+        let fileTreeDocElement = document.querySelector(`#sidebar  div.fn__flex-column[data-type="sidebar-file"]`);
+        let target = event.target as HTMLElement;
+
+        if (!fileTreeDocElement || !fileTreeDocElement.contains(target)) {
+            return;
+        }
+        const targetLiElement = findParentElementWithAttribute(target, ["navigation-file", "navigation-root"], 4);
+        if (!targetLiElement || !target.classList.contains("b3-list-item__text")) return;
+
+        let targetLiElementType = targetLiElement.getAttribute("data-type");
+        if (targetLiElementType != "navigation-file" && targetLiElementType != "navigation-root") {
+            return
+        }
+
+        // 如果是文档，但是不存在子文档。
+        if (targetLiElementType == "navigation-file"
+            && targetLiElement.querySelector("span.b3-list-item__toggle").classList.contains("fn__hidden")
+        ) {
+            return;
+        }
+
+        let notebookId: string = getAttributeRecursively(targetLiElement, "data-url");
+        let docId: string = targetLiElement.getAttribute("data-node-id");
+        let docPath: string = targetLiElement.getAttribute("data-path");
+
+        this.handleSelectDoc(notebookId, docId, docPath)
     }
 
     // return ： 是否双击
@@ -207,17 +248,8 @@ export class DocListManager {
         return true;
     }
 
-    handleSelectDoc(targetLiElement: HTMLElement) {
-        if (!targetLiElement) {
-            return;
-        }
-        let notebookId: string;
-        let docId: string;
-        let docPath: string;
-        // let type = targetLiElement.getAttribute("data-type");
-        notebookId = getAttributeRecursively(targetLiElement, "data-url");
-        docId = targetLiElement.getAttribute("data-node-id");
-        docPath = targetLiElement.getAttribute("data-path");
+
+    handleSelectDoc(notebookId: string, docId: string, docPath: string) {
 
         if ((!docId && !notebookId)) {
             return;
@@ -230,6 +262,9 @@ export class DocListManager {
             this.dockDocListSvelte.switchPath(notebookId, docId, docPath)
         }
     }
+
+
+
 
 
 
@@ -461,6 +496,9 @@ function destoryDocListDock() {
 let observerCommonMenuElement: MutationObserver;
 
 function addObserveCommonMenuElement() {
+    if (EnvConfig.ins.isMobile) {
+        return;
+    }
     let protyleUtilElement = document.querySelector("#commonMenu > div.b3-menu__items");
     if (protyleUtilElement.getAttribute("data-misuzu2027-observed") == "1") {
         return;

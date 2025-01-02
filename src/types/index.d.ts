@@ -152,6 +152,7 @@ interface Window {
         dragElement: any;
         reqIds: any;
         layout: any;
+        mobile: any;
     };
     Lute: any;
 }

@@ -35,7 +35,7 @@
         docId: string,
         docPath: string,
     ) {
-        if (hiddenDock) {
+        if (hiddenDock && !EnvConfig.ins.isMobile) {
             return;
         }
         if (docListSvelte) {
@@ -51,7 +51,11 @@
         >
         <div class="toolbar__text">{EnvConfig.ins.i18n.flatDocumentTree}</div>
     </div> -->
-    <div class="" bind:this={rootElement}>
+    <div
+        class="fn__flex-column misuzu2027__doc-list"
+        style="height: 100%; "
+        bind:this={rootElement}
+    >
         <DocListSvelte bind:this={docListSvelte} />
     </div>
 {:else}

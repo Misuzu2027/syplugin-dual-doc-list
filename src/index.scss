@@ -79,3 +79,13 @@
 
     /* 悬浮时显示 */
 }
+
+
+[data-theme-mode="light"] .misuzu2027__doc-list .doc_list--content li.doc-item--select {
+    border-left: 3px solid rgba(55, 53, 47, 0.2);
+}
+
+[data-theme-mode="dark"] .misuzu2027__doc-list .doc_list--content li.doc-item--select {
+    border-left: 3px solid rgba(255, 255, 255, 0.2);
+
+}

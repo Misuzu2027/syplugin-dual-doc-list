@@ -33,6 +33,7 @@
     import {
         clearSyFileTreeItemFocusClass,
         convertNumberToSordMode,
+        getDesktopCurDocProtyle,
         getParentPath,
     } from "@/utils/siyuan-util";
     import { isTouchDevice } from "@/libs/siyuan/functions";
@@ -230,6 +231,7 @@
             return;
         }
         clearItemFocus();
+        clearItemSelect();
         EnvConfig.ins.refreshNotebookMap();
         curPathNotebookId = notebookId;
         curPathDocId = docId;
@@ -376,9 +378,21 @@
             return;
         }
         clearItemFocus();
+        clearItemSelect();
         target.classList.add("b3-list-item--focus");
 
         handleClickLogic(event, blockId);
+    }
+
+    async function docIconClick(event: MouseEvent, item: DocumentTreeItemInfo) {
+        if (!event) return;
+        event.stopPropagation();
+        event.preventDefault();
+        if (!item || !item.fileBlock || isStrBlank(item.fileBlock.id)) {
+            return;
+        }
+
+        performDoubleClickAction(item.fileBlock.id);
     }
 
     function updateLastSelectedItemIndex(blockId: string | null) {
@@ -467,6 +481,14 @@
             .querySelectorAll("li.b3-list-item--focus")
             .forEach((liItem) => {
                 liItem.classList.remove("b3-list-item--focus");
+            });
+    }
+
+    function clearItemSelect() {
+        rootElement
+            .querySelectorAll("li.doc-item--select")
+            .forEach((liItem) => {
+                liItem.classList.remove("doc-item--select");
             });
     }
 
@@ -574,52 +596,30 @@
         }, 1536);
     }
 
-    export const getInstanceById = (
-        id: string,
-        layout = window.siyuan.layout.centerLayout,
-    ) => {
-        const _getInstanceById = (item: any, id: string) => {
-            if (item.id === id) {
-                return item;
-            }
-            if (!item.children) {
-                return;
-            }
-            let ret: ITab;
-            for (let i = 0; i < item.children.length; i++) {
-                ret = _getInstanceById(item.children[i], id) as ITab;
-                if (ret) {
-                    return ret;
-                }
-            }
-        };
-        return _getInstanceById(layout, id);
-    };
-
     async function docListSelectCurDoc() {
-        const element =
-            document.querySelector(
-                ".layout__wnd--active > .fn__flex > .layout-tab-bar > .item--focus",
-            ) || document.querySelector("ul.layout-tab-bar > .item--focus");
-        if (!element) {
-            return;
+        let docId;
+        let notebookId;
+        let parentDocPath;
+        let parentDocId;
+        if (EnvConfig.ins.isMobile) {
+            if (window.siyuan.mobile.editor) {
+                let protyle = window.siyuan.mobile.editor.protyle;
+                docId = protyle.block.rootID;
+                notebookId = protyle.notebookId;
+                // 这里需要取打开文档的父级文档和路径。
+                parentDocPath = getParentPath(protyle.path);
+                parentDocId = getDocIdByPath(parentDocPath);
+            }
+        } else {
+            let protyle = getDesktopCurDocProtyle();
+            docId = protyle.block.id;
+            notebookId = protyle.notebookId;
+            // 这里需要取打开文档的父级文档和路径。
+            parentDocPath = getParentPath(protyle.path);
+            parentDocId = getDocIdByPath(parentDocPath);
         }
-        const tab = getInstanceById(element.getAttribute("data-id"));
-        if (
-            !tab ||
-            !tab.model ||
-            !tab.model.editor ||
-            !tab.model.editor.protyle
-        ) {
-            return;
-        }
-
-        let protyle = tab.model.editor.protyle;
-        let docId = protyle.block.id;
-        let notebookId = protyle.notebookId;
-        // 这里需要取打开文档的父级文档和路径。
-        let parentDocPath = getParentPath(protyle.path);
-        let parentDocId = getDocIdByPath(parentDocPath);
+        clearItemFocus();
+        clearItemSelect();
 
         await switchPath(notebookId, parentDocId, parentDocPath);
         docListSelectDocById(docId);
@@ -827,7 +827,10 @@
         );
 
         if (selectedItem) {
-            updateFocusStyles(selectedItem.index);
+            clearItemSelect();
+            scrollToSelectedBlock(selectedItem);
+
+            updateFocusStyles(event, selectedItem.index);
             lastSelectDocItemIndex = selectedItem.index;
 
             if (event.key === "Enter") {
@@ -836,18 +839,54 @@
         }
     }
 
-    function updateFocusStyles(newIndex: number) {
+    function scrollToSelectedBlock(selectedItem: DocumentTreeItemInfo) {
+        if (!selectedItem) {
+            return;
+        }
+        let docId = selectedItem.fileBlock.id;
+        let searchResultListElement = rootElement.querySelector(
+            ".doc_list--content",
+        ) as HTMLElement;
+
+        let focusItem = rootElement.querySelector(
+            `li[data-type="navigation-file"][data-node-id="${docId}"]`,
+        ) as HTMLElement;
+
+        if (!focusItem) {
+            focusItem = rootElement.querySelector(
+                `div.b3-list-item[data-node-id="${docId}"]`,
+            ) as HTMLElement;
+        }
+
+        if (!searchResultListElement || !focusItem) {
+            return;
+        }
+
+        // console.log("focusItem.offsetTop", focusItem.offsetTop);
+        let scrollTop =
+            focusItem.offsetTop - searchResultListElement.clientHeight;
+        if (focusItem.offsetTop > scrollTop) {
+            searchResultListElement.scrollTop = scrollTop;
+        } else {
+            searchResultListElement.scrollTop = 0;
+        }
+    }
+
+    function updateFocusStyles(event: KeyboardEvent, newIndex: number) {
         documentItems.forEach((item) => {
             const element = rootElement.querySelector(
                 `li[data-node-id="${item.fileBlock.id}"]`,
             );
 
             if (element) {
-                if (item.index === lastSelectDocItemIndex) {
+                if (!event.shiftKey && item.index === lastSelectDocItemIndex) {
                     element.classList.remove("b3-list-item--focus");
                 }
                 if (item.index === newIndex) {
-                    element.classList.add("b3-list-item--focus");
+                    element.classList.add(
+                        "b3-list-item--focus",
+                        "doc-item--select",
+                    );
                 }
             }
         });
@@ -1019,7 +1058,7 @@
     style="height: 100%;width: calc(100% - 7px);"
     bind:this={rootElement}
 >
-    <div class="flat_doc_tree--top">
+    <div class="doc_list--top">
         <div
             class="block__icons"
             style="overflow: auto;flex-wrap: wrap;height:auto"
@@ -1111,7 +1150,7 @@
             </label>
         </div>
         <!-- 路径信息 -->
-        <div class="scroll-container">
+        <div class="scroll-container" on:touchmove|stopPropagation={() => {}}>
             {@html showCurPath}
         </div>
 
@@ -1151,8 +1190,8 @@
             </div>
             <div class="fn__space"></div>
             <button
-                class="ariaLabel toolbar__item
-                {backPathButtonEnable ? '' : 'toolbar__item--disabled'}"
+                class="misuzu2027__icon-btn
+                {backPathButtonEnable ? '' : 'misuzu2027__icon-btn--disabled'}"
                 on:click={backPath}
                 on:contextmenu={forwardPath}
             >
@@ -1204,7 +1243,7 @@
             </div>
         </div>
     </div>
-    <div class="fn__flex-1">
+    <div class="fn__flex-1 doc_list--content">
         {#each documentItems as item}
             <ul
                 class="b3-list b3-list--background file-tree"
@@ -1228,7 +1267,13 @@
                     <!-- {#if item.fileBlock.subFileCount > 0}
                         
                     {/if} -->
-                    <span class="b3-list-item__icon">
+                    <span
+                        class="b3-list-item__icon"
+                        on:click={(event) => {
+                            docIconClick(event, item);
+                        }}
+                        on:keydown={handleKeyDownDefault}
+                    >
                         {@html item.icon}
                     </span>
                     <span
@@ -1274,7 +1319,7 @@
 
 <style lang="scss">
     /*面板标题*/
-    .flat_doc_tree--top .block__icons {
+    .doc_list--top .block__icons {
         // min-height: 42px;
         // padding: 0 8px;
         white-space: nowrap; /* 强制子元素在同一行显示 */
@@ -1319,13 +1364,40 @@
         transition: box-shadow 0.5s ease-in-out;
     }
 
-    .b3-switch:hover:not(:disabled):before,
-    .b3-switch:focus:not(:disabled):before {
-        content: none;
-    }
+    // .b3-switch:hover:not(:disabled):before,
+    // .b3-switch:focus:not(:disabled):before {
+    //     content: none;
+    // }
 
-    .misuzu2027__doc-list .flat_doc_tree--top .block__icon svg {
+    .misuzu2027__doc-list .doc_list--top .block__icon svg {
         height: 14px;
         width: 14px;
+    }
+
+    .misuzu2027__icon-btn {
+        flex-shrink: 0;
+        cursor: pointer;
+        color: var(--b3-toolbar-color);
+        padding: 5px;
+        margin: 2px;
+        border-radius: var(--b3-border-radius);
+        box-sizing: border-box;
+        transition: var(--b3-transition);
+        display: flex;
+        align-self: center;
+        background-color: rgba(0, 0, 0, 0);
+        border: 0;
+        line-height: 13.5px;
+        height: 23.5px;
+    }
+
+    .misuzu2027__icon-btn--disabled {
+        opacity: 0.54;
+        cursor: not-allowed;
+    }
+
+    .misuzu2027__icon-btn svg {
+        height: 13.5px;
+        width: 13.5px;
     }
 </style>
