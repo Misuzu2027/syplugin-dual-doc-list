@@ -635,19 +635,25 @@
         docLiElement.classList.add("b3-list-item--focus");
 
         let docListElement = docLiElement.parentElement.parentElement;
-        // console.log(
-        //     "selectCurDoc",
-        //     docLiElement.offsetTop,
-        //     docListElement.clientHeight,
-        // );
+        let docOffsetTop = docLiElement.offsetTop - docListElement.offsetTop;
+      
 
-        if (docLiElement.offsetTop > docListElement.clientHeight) {
+        if (
+            docOffsetTop >
+            docListElement.clientHeight +
+                docListElement.scrollTop -
+                docLiElement.clientHeight * 4
+        ) {
             docListElement.scrollTop =
-                docLiElement.offsetTop -
-                docListElement.clientHeight / 2 -
-                docListElement.offsetTop;
-        } else {
-            docListElement.scrollTop = 0;
+                docOffsetTop -
+                docListElement.clientHeight +
+                docLiElement.clientHeight * 5;
+        } else if (
+            docOffsetTop <
+            docListElement.scrollTop + docLiElement.clientHeight * 3
+        ) {
+            docListElement.scrollTop =
+                docOffsetTop - docLiElement.clientHeight * 3;
         }
     }
 
@@ -828,7 +834,7 @@
 
         if (selectedItem) {
             clearItemSelect();
-            scrollToSelectedBlock(selectedItem);
+            docListSelectDocById(selectedItem.fileBlock.id);
 
             updateFocusStyles(event, selectedItem.index);
             lastSelectDocItemIndex = selectedItem.index;
@@ -836,39 +842,6 @@
             if (event.key === "Enter") {
                 openBlockTab(selectedItem.fileBlock.id, null);
             }
-        }
-    }
-
-    function scrollToSelectedBlock(selectedItem: DocumentTreeItemInfo) {
-        if (!selectedItem) {
-            return;
-        }
-        let docId = selectedItem.fileBlock.id;
-        let searchResultListElement = rootElement.querySelector(
-            ".doc_list--content",
-        ) as HTMLElement;
-
-        let focusItem = rootElement.querySelector(
-            `li[data-type="navigation-file"][data-node-id="${docId}"]`,
-        ) as HTMLElement;
-
-        if (!focusItem) {
-            focusItem = rootElement.querySelector(
-                `div.b3-list-item[data-node-id="${docId}"]`,
-            ) as HTMLElement;
-        }
-
-        if (!searchResultListElement || !focusItem) {
-            return;
-        }
-
-        // console.log("focusItem.offsetTop", focusItem.offsetTop);
-        let scrollTop =
-            focusItem.offsetTop - searchResultListElement.clientHeight;
-        if (focusItem.offsetTop > scrollTop) {
-            searchResultListElement.scrollTop = scrollTop;
-        } else {
-            searchResultListElement.scrollTop = 0;
         }
     }
 
