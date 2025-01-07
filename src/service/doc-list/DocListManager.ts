@@ -219,6 +219,12 @@ export class DocListManager {
         ) {
             return;
         }
+        // 如果是笔记本，判断一下是否启用双击切换文档折叠。
+        if (targetLiElementType == "navigation-root" && this.dockDocListSvelte) {
+            if (this.handleNotebookDoubleClick(event, targetLiElement)) {
+                return;
+            }
+        }
 
         let notebookId: string = getAttributeRecursively(targetLiElement, "data-url");
         let docId: string = targetLiElement.getAttribute("data-node-id");
@@ -335,7 +341,7 @@ function getDragElement(): HTMLElement {
 
         dockContainerElement.addEventListener('mousemove', resize);
         dockContainerElement.addEventListener('mouseup', stopResize);
-        console.log(dockContainerElement)
+        // console.log(dockContainerElement)
     });
 
     function resize(e) {

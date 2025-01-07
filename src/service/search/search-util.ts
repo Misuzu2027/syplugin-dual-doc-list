@@ -115,7 +115,7 @@ export async function queryDocumentByDb(
         false,
     );
 
-    if (docSortMethod.startsWith("Alphanum") || docSortMethod.startsWith("SubDocCount")) {
+    if (docSortMethod.startsWith("Name") || docSortMethod.startsWith("Alphanum") || docSortMethod.startsWith("SubDocCount")) {
         documentSort(documentItems, docSortMethod);
     }
 
@@ -503,6 +503,43 @@ function getDocumentSortFun(documentSortMethod: DocumentSortMode)
                     return rank;
                 }
                 return Number(b.fileBlock.created) - Number(a.fileBlock.created);
+            };
+            break;
+        case "NameASC":
+            documentSortFun = function (
+                a: DocumentTreeItemInfo,
+                b: DocumentTreeItemInfo,
+            ): number {
+                let rank = getDocumentBlockRankDescSort(a, b);
+                if (rank != 0) {
+                    return rank;
+                }
+
+                let aContent = a.fileBlock.content.replace("<mark>", "").replace("</mark>", "");
+                let bContent = b.fileBlock.content.replace("<mark>", "").replace("</mark>", "");
+                let result = aContent.localeCompare(bContent);
+                if (result == 0) {
+                    result = Number(b.fileBlock.updated) - Number(a.fileBlock.updated);
+                }
+                return result;
+            };
+            break;
+        case "NameDESC":
+            documentSortFun = function (
+                a: DocumentTreeItemInfo,
+                b: DocumentTreeItemInfo,
+            ): number {
+                let rank = getDocumentBlockRankDescSort(a, b);
+                if (rank != 0) {
+                    return rank;
+                }
+                let aContent = a.fileBlock.content.replace("<mark>", "").replace("</mark>", "");
+                let bContent = b.fileBlock.content.replace("<mark>", "").replace("</mark>", "");
+                let result = bContent.localeCompare(aContent);
+                if (result == 0) {
+                    result = Number(b.fileBlock.updated) - Number(a.fileBlock.updated);
+                }
+                return result;
             };
             break;
         case "AlphanumASC":

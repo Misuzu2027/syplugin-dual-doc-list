@@ -383,12 +383,21 @@ export function getParentPath(path: string): string {
 }
 
 export function clearSyFileTreeItemFocusClass() {
-    document
-        .querySelector("div.file-tree.sy__file")
-        .querySelectorAll("li.b3-list-item--focus")
-        .forEach((liItem) => {
-            liItem.classList.remove("b3-list-item--focus");
-        });
+    if (EnvConfig.ins.isMobile) {
+        document
+            .querySelector(`div.fn__flex-column[data-type="sidebar-file"]`)
+            .querySelectorAll("li.b3-list-item--focus")
+            .forEach((liItem) => {
+                liItem.classList.remove("b3-list-item--focus");
+            });
+    } else {
+        document
+            .querySelector("div.file-tree.sy__file")
+            .querySelectorAll("li.b3-list-item--focus")
+            .forEach((liItem) => {
+                liItem.classList.remove("b3-list-item--focus");
+            });
+    }
 }
 
 export const getDesktopCurDocProtyle = (): any => {

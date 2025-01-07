@@ -19,7 +19,16 @@
     });
 
     export function restView() {
+        let hiddenDockTemp = hiddenDock;
         hiddenDock = isElementHidden(rootElement);
+        if (hiddenDockTemp && !hiddenDock) {
+            if (!EnvConfig.ins.isMobile) {
+                let searchInputElement = rootElement.querySelector(
+                    ".misuzu2027__dual-doc-list__search-input",
+                ) as HTMLElement;
+                searchInputElement.focus();
+            }
+        }
         if (hiddenDock) {
             // 隐藏侧边栏，清空高亮
             clearCssHighlights();

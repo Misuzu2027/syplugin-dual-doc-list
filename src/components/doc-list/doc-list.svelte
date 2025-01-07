@@ -22,14 +22,23 @@
         selectItemByArrowKeys,
     } from "@/service/search/search-util";
     import { getNotebookIcon } from "@/utils/icon-util";
-    import { SETTING_DOCUMENT_LIST_SORT_METHOD_ELEMENT } from "@/models/setting-constant";
+    import {
+        DUAL_DOC_LIST_SORT_ATTR_KEY,
+        SETTING_DOCUMENT_LIST_SORT_METHOD_ELEMENT,
+    } from "@/models/setting-constant";
     import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
     import {
         isStrBlank,
         isStrNotBlank,
         splitKeywordStringToArray,
     } from "@/utils/string-util";
-    import { createDoc, getBlockByID, getDocInfo } from "@/utils/api";
+    import {
+        createDoc,
+        getBlockAttrs,
+        getBlockByID,
+        getDocInfo,
+        setBlockAttrs,
+    } from "@/utils/api";
     import {
         clearSyFileTreeItemFocusClass,
         convertNumberToSordMode,
@@ -233,6 +242,7 @@
         clearItemFocus();
         clearItemSelect();
         EnvConfig.ins.refreshNotebookMap();
+        let settingConfig = SettingService.ins.SettingConfig;
         curPathNotebookId = notebookId;
         curPathDocId = docId;
         curPathDocPath = docPath;
@@ -242,8 +252,7 @@
         }
         backPathButtonEnable = pathHistory.getHistoryLength() > 1;
 
-        let docSortMethodTemp =
-            SettingService.ins.SettingConfig.defaultDbQuerySortOrder;
+        let docSortMethodTemp = settingConfig.defaultDbQuerySortOrder;
         if (isStrNotBlank(notebookId)) {
             let notebookSort =
                 EnvConfig.ins.notebookMap.get(notebookId).sortMode;
@@ -254,6 +263,20 @@
                 notebookSort = window.siyuan.config.fileTree.sort;
             }
             docSortMethodTemp = convertNumberToSordMode(notebookSort);
+
+            if (
+                isStrNotBlank(docId) &&
+                settingConfig.docDirectorySortSave
+            ) {
+                let docAttrs = await getBlockAttrs(docId);
+                if (docAttrs) {
+                    let docAttrSortMeth = docAttrs[DUAL_DOC_LIST_SORT_ATTR_KEY];
+                    if (isStrNotBlank(docAttrSortMeth)) {
+                        docSortMethodTemp = docAttrSortMeth as DocumentSortMode;
+                    }
+                }
+            }
+
             curNotebookSortMethod = docSortMethodTemp;
         } else {
             curNotebookSortMethod = null;
@@ -275,6 +298,16 @@
 
     function documentSortMethodChange(event) {
         curPathSortMethod = event.target.value;
+        if (isStrNotBlank(curPathDocId)) {
+            let settingConfig = SettingService.ins.SettingConfig;
+            let docSortAutoSave = settingConfig.docDirectorySortSave;
+            if (docSortAutoSave) {
+                setBlockAttrs(curPathDocId, {
+                    [DUAL_DOC_LIST_SORT_ATTR_KEY]: curPathSortMethod,
+                });
+            }
+        }
+
         refreshDocListByDocSort(curPathSortMethod);
     }
 
@@ -636,7 +669,6 @@
 
         let docListElement = docLiElement.parentElement.parentElement;
         let docOffsetTop = docLiElement.offsetTop - docListElement.offsetTop;
-      
 
         if (
             docOffsetTop >
@@ -1183,7 +1215,7 @@
                     </svg>
                 </span>
                 <input
-                    class="b3-text-field b3-text-field--text"
+                    class="b3-text-field b3-text-field--text misuzu2027__dual-doc-list__search-input"
                     style="padding-left: 32px !important;padding-right: 32px !important;"
                     on:input={handleSearchInputChange}
                     bind:value={searchInputKey}

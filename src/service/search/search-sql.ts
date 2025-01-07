@@ -78,10 +78,11 @@ export function generateDocumentListSql(
     } else if (documentSortMethod == 'RefCountDESC') {
         columns.push(` (SELECT count(1) FROM refs WHERE def_block_root_id = blocks.id) refCount `);
         orders.push([" refCount DESC ", " updated DESC "]);
-    } else if (documentSortMethod == 'NameASC') {
-        orders.push([" content ASC "]);
-    } else if (documentSortMethod == 'NameDESC') {
-        orders.push([" content DESC "]);
+    // 中文排序没有按照首字母拼音排序，跟官方的不太一样。
+    // } else if (documentSortMethod == 'NameASC') { 
+    //     orders.push([" content ASC "]);
+    // } else if (documentSortMethod == 'NameDESC') {
+    //     orders.push([" content DESC "]);
     } else {
         orders.push([" updated DESC "]);
     }

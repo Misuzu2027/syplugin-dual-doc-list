@@ -115,13 +115,16 @@ function getDefaultSettingConfig() {
     defaultConfig.fullTextSearch = false;
     defaultConfig.defaultDbQuerySortOrder = "UpdatedDESC";
     defaultConfig.allDocsQueryLimit = 50;
+    defaultConfig.docDirectorySortSave = false;
 
+    // 样式相关
     defaultConfig.embedDocListViewFlex = 1.0;
 
-
+    // 其他
     defaultConfig.doubleClickTimeout = 200;
 
 
+    // 暂不支持设置
     defaultConfig.includeConcatFields = ["content", "tag", "name", "alias", "memo"];
     defaultConfig.fullTextSearchBlockType = ["d", "h", "c", "m", "t", "p", "html", "av", "video", "audio"];
     return defaultConfig;

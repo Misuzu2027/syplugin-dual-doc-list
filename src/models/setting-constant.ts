@@ -1,6 +1,8 @@
 import { DocListManager } from "@/service/doc-list/DocListManager";
 import { ItemProperty, IOption, TabProperty } from "./setting-model";
 
+export const DUAL_DOC_LIST_SORT_ATTR_KEY = "custom-dual-doc-list-sort"
+
 export function getSettingTabArray(): TabProperty[] {
 
     let tabProperties: TabProperty[] = [
@@ -23,9 +25,10 @@ export function getSettingTabArray(): TabProperty[] {
             key: "query-setting", name: "查询相关", iconKey: "iconLink", props: [
                 // new ItemProperty({ key: "lockSortMode", type: "switch", name: "锁定排序方式", description: "", tips: "", min: 0 }),
                 new ItemProperty({ key: "showSubDocOfSubDoc", type: "switch", name: "默认显示子文档的子文档", description: "", tips: "" }),
-                new ItemProperty({ key: "fullTextSearch", type: "switch", name: "全文搜索", description: "", tips: "" }),
+                new ItemProperty({ key: "fullTextSearch", type: "switch", name: "默认全文搜索", description: "", tips: "" }),
                 new ItemProperty({ key: "defaultDbQuerySortOrder", type: "select", name: "数据库默认查询方式", description: "何时会用到这个配置？<br/>当使用数据库查询文档，且笔记本排序方式为“文档大小”、“子文档数”、“自定义” 排序时，会重置为此方式。", tips: "", options: getDocDbQuerySortMethodElement() }),
                 new ItemProperty({ key: "allDocsQueryLimit", type: "number", name: "显示所有文档最大数量", description: "", tips: "", min: 0 }),
+                new ItemProperty({ key: "docDirectorySortSave", type: "switch", name: "保存文档目录排序方式", description: "开启：在文档目录中切换排序方式时，会自动保存当前目录的排序偏好，下次访问该目录时能够保持相同的排序方式。<br/>关闭（默认）：使用笔记本或文档树的排序方式。", tips: "", min: 0 }),
 
             ]
 
