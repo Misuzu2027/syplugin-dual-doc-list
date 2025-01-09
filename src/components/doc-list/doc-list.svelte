@@ -242,7 +242,6 @@
         clearItemFocus();
         clearItemSelect();
         EnvConfig.ins.refreshNotebookMap();
-        let settingConfig = SettingService.ins.SettingConfig;
         curPathNotebookId = notebookId;
         curPathDocId = docId;
         curPathDocPath = docPath;
@@ -252,39 +251,12 @@
         }
         backPathButtonEnable = pathHistory.getHistoryLength() > 1;
 
-        let docSortMethodTemp = settingConfig.defaultDbQuerySortOrder;
-        if (isStrNotBlank(notebookId)) {
-            let notebookSort =
-                EnvConfig.ins.notebookMap.get(notebookId).sortMode;
-            if (
-                notebookSort == 15 &&
-                window.siyuan.config.fileTree.sort != undefined
-            ) {
-                notebookSort = window.siyuan.config.fileTree.sort;
+        // 没有锁定排序 就更新
+        if (!lockSortOrder) {
+            let sortMethodTemp = await getSortMethodByNotebookOrDoc(notebookId, docId);
+            if (sortMethodTemp) {
+                curPathSortMethod = sortMethodTemp;
             }
-            docSortMethodTemp = convertNumberToSordMode(notebookSort);
-
-            if (
-                isStrNotBlank(docId) &&
-                settingConfig.docDirectorySortSave
-            ) {
-                let docAttrs = await getBlockAttrs(docId);
-                if (docAttrs) {
-                    let docAttrSortMeth = docAttrs[DUAL_DOC_LIST_SORT_ATTR_KEY];
-                    if (isStrNotBlank(docAttrSortMeth)) {
-                        docSortMethodTemp = docAttrSortMeth as DocumentSortMode;
-                    }
-                }
-            }
-
-            curNotebookSortMethod = docSortMethodTemp;
-        } else {
-            curNotebookSortMethod = null;
-        }
-
-        // 没有锁定排序 或则 当前笔记本排序方式不为空。
-        if (!lockSortOrder || !curNotebookSortMethod) {
-            curPathSortMethod = docSortMethodTemp;
         }
 
         await updateDocList(
@@ -294,6 +266,43 @@
             searchInputKey,
             curPathSortMethod,
         );
+    }
+
+    async function getSortMethodByNotebookOrDoc(
+        notebookId: string,
+        docId: string,
+    ): Promise<DocumentSortMode> {
+        let settingConfig = SettingService.ins.SettingConfig;
+        // 获取数据库默认排序方式
+        let pathSortMethodTemp = settingConfig.defaultDbQuerySortOrder;
+        // 获取并更新当前笔记本排序方式
+        if (isStrNotBlank(notebookId)) {
+            let notebookSort =
+                EnvConfig.ins.notebookMap.get(notebookId).sortMode;
+            if (
+                notebookSort == 15 &&
+                window.siyuan.config.fileTree.sort != undefined
+            ) {
+                notebookSort = window.siyuan.config.fileTree.sort;
+            }
+            pathSortMethodTemp = convertNumberToSordMode(notebookSort);
+            curNotebookSortMethod = pathSortMethodTemp;
+        } else {
+            curNotebookSortMethod = null;
+        }
+
+        if (isStrNotBlank(docId) && settingConfig.docDirectorySortSave) {
+            let docAttrs = await getBlockAttrs(docId);
+            if (docAttrs) {
+                let docAttrSortMeth = docAttrs[DUAL_DOC_LIST_SORT_ATTR_KEY];
+                if (isStrNotBlank(docAttrSortMeth)) {
+                    return docAttrSortMeth as DocumentSortMode;
+                }
+            }
+        }
+
+        // 返回 数据库默认排序方式 或 笔记本排序方式
+        return pathSortMethodTemp;
     }
 
     function documentSortMethodChange(event) {
