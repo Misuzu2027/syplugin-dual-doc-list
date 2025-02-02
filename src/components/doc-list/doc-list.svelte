@@ -253,7 +253,10 @@
 
         // 没有锁定排序 就更新
         if (!lockSortOrder) {
-            let sortMethodTemp = await getSortMethodByNotebookOrDoc(notebookId, docId);
+            let sortMethodTemp = await getSortMethodByNotebookOrDoc(
+                notebookId,
+                docId,
+            );
             if (sortMethodTemp) {
                 curPathSortMethod = sortMethodTemp;
             }
@@ -646,6 +649,9 @@
         if (EnvConfig.ins.isMobile) {
             if (window.siyuan.mobile.editor) {
                 let protyle = window.siyuan.mobile.editor.protyle;
+                if (!protyle) {
+                    return;
+                }
                 docId = protyle.block.rootID;
                 notebookId = protyle.notebookId;
                 // 这里需要取打开文档的父级文档和路径。
@@ -654,6 +660,9 @@
             }
         } else {
             let protyle = getDesktopCurDocProtyle();
+            if (!protyle) {
+                return;
+            }
             docId = protyle.block.id;
             notebookId = protyle.notebookId;
             // 这里需要取打开文档的父级文档和路径。
@@ -926,6 +935,47 @@
         }, 256);
     }
 
+    /**
+     * 
+定位当前打开的文档 — ALT + D; Document
+锁定(解锁)路径 — ALT + Q
+锁定(解锁)排序方式 — ALT + W
+显示(隐藏)子文件夹 — ALT + E
+开启(关闭)全文搜索 — ALT + R
+     * @param event
+     */
+    function handleSearchInputKeydown(event) {
+        // console.log("handleSearchInputKeydown");
+
+        // 检查按键是否是 Alt + F
+        if (event.altKey && event.key === "d") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            docListSelectCurDoc();
+        } else if (event.altKey && event.key === "q") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            lockPath = !lockPath;   
+        } else if (event.altKey && event.key === "w") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            lockSortOrder = !lockSortOrder;
+        } else if (event.altKey && event.key === "e") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            switchShowSubDocOfSubDoc();
+        } else if (event.altKey && event.key === "r") {
+            event.preventDefault();
+            event.stopPropagation();
+
+            switchFullTextSearch();
+        }
+    }
+
     function clearDocumentSearchInput() {
         searchInputKey = "";
         refreshDocListBySearchKey(searchInputKey);
@@ -1066,11 +1116,13 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <!-- svelte-ignore a11y-label-has-associated-control -->
-
+<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 <div
     class="fn__flex-column misuzu2027__doc-list"
     style="height: 100%;width: calc(100% - 7px);"
+    tabindex="0"
     bind:this={rootElement}
+    on:keydown={handleSearchInputKeydown}
 >
     <div class="doc_list--top">
         <div
