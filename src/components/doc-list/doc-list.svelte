@@ -13,6 +13,7 @@
         openTab,
         Constants,
         ITab,
+        showMessage,
     } from "siyuan";
     import { EnvConfig } from "@/config/EnvConfig";
     import {
@@ -33,10 +34,13 @@
         splitKeywordStringToArray,
     } from "@/utils/string-util";
     import {
+        changeSort,
         createDoc,
         getBlockAttrs,
         getBlockByID,
         getDocInfo,
+        listDocsByPath,
+        moveDocs,
         setBlockAttrs,
     } from "@/utils/api";
     import {
@@ -46,7 +50,11 @@
         getParentPath,
     } from "@/utils/siyuan-util";
     import { isTouchDevice } from "@/libs/siyuan/functions";
-    import { hasClosestByTag } from "@/libs/siyuan/hasClosest";
+    import {
+        hasClosestBySelector,
+        hasClosestByTag,
+        hasTopClosestByTag,
+    } from "@/libs/siyuan/hasClosest";
     import { delayedTwiceRefresh } from "@/utils/timing-util";
     import { SettingService } from "@/service/setting/SettingService";
     import { PathHistory } from "@/models/PathHistory";
@@ -753,6 +761,9 @@
     }
 
     async function refreshDocList() {
+        // 先清空
+        // let docListElement = rootElement.querySelector("div.doc_list--content");
+        // docListElement.innerHTML = "";
         await updateDocList(
             curPathNotebookId,
             curPathDocId,
@@ -957,7 +968,7 @@
             event.preventDefault();
             event.stopPropagation();
 
-            lockPath = !lockPath;   
+            lockPath = !lockPath;
         } else if (event.altKey && event.key === "w") {
             event.preventDefault();
             event.stopPropagation();
@@ -1010,6 +1021,375 @@
     }
 
     /**拖拽*/
+    function docListDragoverEvent(event: any) {
+        event.preventDefault();
+        event.stopPropagation();
+        // 默认允许拖拽
+        event.dataTransfer.dropEffect = "move";
+        if (
+            window.siyuan.config.readonly ||
+            event.dataTransfer.types.includes(Constants.SIYUAN_DROP_TAB)
+        ) {
+            return;
+        }
+
+        // 不支持块标拖拽
+        for (const item of event.dataTransfer.items) {
+            if (item.type.startsWith(Constants.SIYUAN_DROP_GUTTER)) {
+                event.dataTransfer.dropEffect = "none";
+                return;
+            }
+        }
+
+        let syFileTreeElement = document.querySelector(
+            "div.file-tree.sy__file > div.fn__flex-1 ",
+        );
+        if (!syFileTreeElement) {
+            event.dataTransfer.dropEffect = "none";
+            return;
+        }
+
+        // 如果拖拽元素存在笔记本
+        let syFileTreeFocusLiElemntArray = syFileTreeElement.querySelectorAll(
+            ".b3-list-item--focus",
+        );
+        for (const item of syFileTreeFocusLiElemntArray) {
+            let liType = (item as HTMLElement).getAttribute("data-type");
+            if (liType === "navigation-root") {
+                event.dataTransfer.dropEffect = "none";
+                return;
+            }
+        }
+
+        const thisElement = event.currentTarget as HTMLElement;
+        let docListTopElement = hasClosestBySelector(
+            event.target,
+            "div.doc_list--top",
+        );
+        let liElement = hasClosestByTag(event.target, "LI");
+        if (!liElement) {
+            liElement = hasClosestByTag(
+                document.elementFromPoint(event.clientX, event.clientY - 1),
+                "LI",
+            );
+        }
+        liElement = liElement as HTMLElement;
+
+        if ((!docListTopElement && !liElement) || !window.siyuan.dragElement) {
+            event.dataTransfer.dropEffect = "none";
+            return;
+        }
+
+        removeDocListDragClass(thisElement);
+        if (docListTopElement) {
+            if (!curPathNotebookId && !curPathDocId && !curPathDocPath) {
+                event.dataTransfer.dropEffect = "none";
+                return;
+            }
+            docListTopElement.classList.add("misuzu2027__dragover");
+        } else if (liElement) {
+            liElement.classList.add("misuzu2027__dragover");
+        }
+
+        let docListContentElement =
+            thisElement.querySelector(".doc_list--content");
+
+        let customSort =
+            curPathSortMethod === "Custom" && !localShowSubDocOfSubDoc;
+        const SIZE_SCROLL_TB = 32;
+        const MIN_SCROLL_STEP = 5;
+        const SIZE_SCROLL_STEP = 200;
+        const contentRect = docListContentElement.getBoundingClientRect();
+
+        let newScrollTop = 0;
+        if (event.clientY < contentRect.top + SIZE_SCROLL_TB) {
+            let ratio =
+                (contentRect.top + SIZE_SCROLL_TB - event.clientY) /
+                SIZE_SCROLL_TB;
+            newScrollTop =
+                docListContentElement.scrollTop -
+                Math.max(MIN_SCROLL_STEP, ratio * SIZE_SCROLL_STEP);
+        } else if (event.clientY > contentRect.bottom - SIZE_SCROLL_TB) {
+            let ratio =
+                (event.clientY - (contentRect.bottom - SIZE_SCROLL_TB)) /
+                SIZE_SCROLL_TB;
+            newScrollTop =
+                docListContentElement.scrollTop +
+                Math.max(MIN_SCROLL_STEP, ratio * SIZE_SCROLL_STEP);
+        }
+        if (newScrollTop !== 0) {
+            docListContentElement.scroll({
+                top: newScrollTop,
+                behavior: "smooth",
+            });
+        }
+
+        if (customSort && liElement) {
+            const nodeRect = liElement.getBoundingClientRect();
+            const dragHeight = nodeRect.height * 0.2;
+            if (event.clientY > nodeRect.bottom - dragHeight) {
+                (liElement as HTMLElement).classList.add("dragover__bottom");
+                liElement.classList.remove("misuzu2027__dragover");
+            } else if (event.clientY < nodeRect.top + dragHeight) {
+                (liElement as HTMLElement).classList.add("dragover__top");
+                liElement.classList.remove("misuzu2027__dragover");
+            }
+        }
+    }
+    let dragenterCounter = 0;
+    function docListDragleaveEvent(event: any) {
+        // event.preventDefault();
+        // event.dataTransfer.dropEffect = "move";
+        dragenterCounter--;
+        if (dragenterCounter === 0) {
+            const thisElement = event.currentTarget as HTMLElement;
+            removeDocListDragClass(thisElement);
+        }
+    }
+    function docListDragenterEvent(event: any) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "move";
+        dragenterCounter++;
+    }
+
+    async function docListDropEvent(event: any) {
+        const thisElement = event.currentTarget as HTMLElement;
+
+        let newElement = thisElement.querySelector(
+            ".misuzu2027__dragover, .dragover__bottom, .dragover__top",
+        );
+
+        if (!newElement) {
+            return;
+        }
+        newElement = newElement as HTMLElement;
+
+        // 不支持块标拖拽
+        for (const item of event.dataTransfer.items) {
+            if (item.type.startsWith(Constants.SIYUAN_DROP_GUTTER)) {
+                event.dataTransfer.dropEffect = "none";
+                return;
+            }
+        }
+        window.siyuan.dragElement = undefined;
+        // if (!event.dataTransfer.getData(Constants.SIYUAN_DROP_FILE)) {
+        //     removeDocListDragClass(thisElement);
+        //     return;
+        // }
+
+        let syFileTreeElement = document.querySelector(
+            "div.file-tree.sy__file > div.fn__flex-1 ",
+        );
+        if (!syFileTreeElement) {
+            event.dataTransfer.dropEffect = "none";
+            return;
+        }
+
+        let syFileTreeFocusLiElemntArray = syFileTreeElement.querySelectorAll(
+            ".b3-list-item--focus",
+        );
+        if (!syFileTreeFocusLiElemntArray) {
+            return;
+        }
+
+        let toNotebookId = curPathNotebookId;
+        let toPath = curPathDocPath;
+        if (newElement.tagName == "LI") {
+            const newUlElement = hasTopClosestByTag(newElement, "UL");
+            if (!newUlElement) {
+                return;
+            }
+            toNotebookId = newUlElement.getAttribute("data-url");
+            if (newElement.classList.contains("misuzu2027__dragover")) {
+                toPath = newElement.getAttribute("data-path");
+            }
+        }
+
+        const selectFileElements: HTMLElement[] = [];
+        const fromPaths: string[] = [];
+
+        syFileTreeFocusLiElemntArray.forEach((item: HTMLElement) => {
+            if (item.getAttribute("data-type") !== "navigation-file") {
+                return;
+            }
+            const dataPath = item.getAttribute("data-path");
+            const isChild = fromPaths.find((itemPath) => {
+                if (dataPath.startsWith(itemPath.replace(".sy", ""))) {
+                    return;
+                }
+            });
+            if (!isChild) {
+                // 禁止父节点移动到子节点 https://github.com/siyuan-note/siyuan/issues/12539
+                if (toPath.startsWith(item.dataset.path.replace(".sy", ""))) {
+                    return;
+                }
+                selectFileElements.push(item as HTMLElement);
+                fromPaths.push(dataPath);
+            }
+        });
+
+        let customSort =
+            curPathSortMethod === "Custom" && !localShowSubDocOfSubDoc;
+
+        let changSortUpdate =
+            customSort &&
+            (newElement.classList.contains("dragover__bottom") ||
+                newElement.classList.contains("dragover__top"));
+
+        if (!changSortUpdate) {
+            if (isArrayNotEmpty(fromPaths)) {
+                await moveDocs(fromPaths, toNotebookId, toPath);
+                refreshDocList();
+            }
+        } else {
+            let hasMove = false;
+            const toDir = pathPosix().dirname(toPath);
+            let oldDocumentItemsTemp = [...documentItems];
+            if (fromPaths.length > 0) {
+                moveDocs(
+                    fromPaths,
+                    toNotebookId,
+                    toPath,
+                    Constants.CB_MOVE_NOLIST,
+                );
+                selectFileElements.forEach((item) => {
+                    item.setAttribute(
+                        "data-path",
+                        pathPosix().join(
+                            toDir,
+                            item.getAttribute("data-node-id") + ".sy",
+                        ),
+                    );
+                });
+                hasMove = true;
+            }
+            // 因为用的 svelte 框架，所以不能直接修改页面元素，添加或修改顺序需要往 oldDocumentItemsTemp 数组中丢
+            let newElementNodeId = newElement.getAttribute("data-node-id");
+            let newDocumentItems: DocumentTreeItemInfo[] = [];
+            let selectDocumentItem: DocumentTreeItemInfo[] = [];
+            let selectDocumentId: string[] = [];
+            selectFileElements.forEach((item) => {
+                let itemNodeId = item.getAttribute("data-node-id");
+                let nameElement = item.querySelector(
+                    "span.b3-list-item__text.ariaLabel",
+                );
+                let iconElement = item.querySelector("span.b3-list-item__icon");
+                let refCountElement = item.querySelector(
+                    "span.popover__block.counter",
+                );
+                let refCount = refCountElement?.textContent
+                    ? Number(refCountElement.textContent)
+                    : 0;
+                let subFileCount = item.getAttribute("data-count")
+                    ? Number(item.getAttribute("data-count"))
+                    : 0;
+                let created = itemNodeId.split("-")[0];
+                let itemInfo: DocumentTreeItemInfo = new DocumentTreeItemInfo();
+                itemInfo.ariaLabel = nameElement?.getAttribute("aria-label");
+                itemInfo.icon = iconElement?.outerHTML;
+                itemInfo.refCount = refCount;
+                itemInfo.fileBlock = {
+                    id: itemNodeId,
+                    box: curPathNotebookId,
+                    content: nameElement.textContent,
+                    name: null,
+                    alias: null,
+                    memo: null,
+                    path: item.getAttribute("data-path"),
+                    refCount: refCount,
+                    subFileCount: subFileCount,
+                    sort: 0,
+                    created: created,
+                    updated: created,
+                };
+
+                selectDocumentItem.push(itemInfo);
+                selectDocumentId.push(itemNodeId);
+            });
+
+            // 遍历原数组
+            let inserted = false; // 标记是否已经插入过元素
+            for (let i = 0; i < oldDocumentItemsTemp.length; i++) {
+                let docItemTemp = oldDocumentItemsTemp[i];
+                // 如果移动的文档已经在原目录下存在，需要过滤掉，否则会干扰顺序。
+                if (selectDocumentId.includes(docItemTemp.fileBlock.id)) {
+                    continue;
+                }
+                // 检查当前元素是否满足插入条件
+                if (
+                    !inserted &&
+                    oldDocumentItemsTemp[i].fileBlock.id == newElementNodeId
+                ) {
+                    if (newElement.classList.contains("dragover__top")) {
+                        inserted = true; // 标记已插入
+                        newDocumentItems.push(...selectDocumentItem);
+                        newDocumentItems.push(docItemTemp);
+                        continue;
+                    } else if (
+                        newElement.classList.contains("dragover__bottom")
+                    ) {
+                        inserted = true; // 标记已插入
+                        newDocumentItems.push(docItemTemp);
+                        newDocumentItems.push(...selectDocumentItem);
+                        continue;
+                    }
+                }
+
+                // 将当前元素添加到结果数组
+                newDocumentItems.push(oldDocumentItemsTemp[i]);
+            }
+            // 如果遍历完数组后还没有插入元素，说明没有满足条件的位置，直接插入
+            if (!inserted) {
+                newDocumentItems.push(...selectDocumentItem);
+            }
+            // documentItems = newDocumentItems;
+
+            const paths: string[] = [];
+
+            for (const docItem of newDocumentItems) {
+                paths.push(docItem.fileBlock.path);
+            }
+
+            await changeSort(toNotebookId, paths);
+            if (hasMove) {
+                let path = toDir === "/" ? "/" : toDir + ".sy";
+                let data = await listDocsByPath(
+                    toNotebookId,
+                    path,
+                    null,
+                    null,
+                    null,
+                    null,
+                );
+                if (data.path === "/" && data.files.length === 0) {
+                    showMessage(window.siyuan.languages.emptyContent);
+                    return;
+                }
+                await refreshDocList();
+                // thisElement.scrollTop = oldScrollTop;
+            }
+        }
+        removeDocListDragClass(thisElement);
+    }
+
+    function removeDocListDragClass(docListElemnt: HTMLElement) {
+        if (!docListElemnt) {
+            return;
+        }
+        docListElemnt.classList.remove("misuzu2027__dragover");
+        docListElemnt
+            .querySelectorAll(
+                ".misuzu2027__dragover, .dragover__bottom, .dragover__top",
+            )
+            .forEach((item: HTMLElement) => {
+                item.classList.remove(
+                    "misuzu2027__dragover",
+                    "dragover__bottom",
+                    "dragover__top",
+                );
+            });
+    }
+
     function docListItemDragstartEvent(event: any) {
         let syFileTreeElement = document.querySelector(
             "div.file-tree.sy__file > div.fn__flex-1 ",
@@ -1123,6 +1503,10 @@
     tabindex="0"
     bind:this={rootElement}
     on:keydown={handleSearchInputKeydown}
+    on:dragover={docListDragoverEvent}
+    on:dragleave={docListDragleaveEvent}
+    on:dragenter={docListDragenterEvent}
+    on:drop={docListDropEvent}
 >
     <div class="doc_list--top">
         <div
@@ -1310,6 +1694,7 @@
         </div>
     </div>
     <div class="fn__flex-1 doc_list--content">
+        <div style="height: 4px;"></div>
         {#each documentItems as item}
             <ul
                 class="b3-list b3-list--background file-tree"

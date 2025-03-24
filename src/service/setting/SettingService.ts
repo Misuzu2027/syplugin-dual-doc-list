@@ -126,7 +126,7 @@ function getDefaultSettingConfig() {
 
     // 暂不支持设置
     defaultConfig.includeConcatFields = ["content", "tag", "name", "alias", "memo"];
-    defaultConfig.fullTextSearchBlockType = ["d", "h", "c", "m", "t", "p", "html", "av", "video", "audio"];
+    defaultConfig.includeBlockTypes = ["d", "h", "c", "m", "t", "p", "html", "av", "video", "audio"];
     return defaultConfig;
 }
 

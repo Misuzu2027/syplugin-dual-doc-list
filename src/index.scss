@@ -61,6 +61,19 @@
     text-decoration: underline;
 }
 
+.misuzu2027__doc-list .misuzu2027__dragover {
+    background-color: var(--b3-theme-primary-lightest);
+    // position: absolute;
+    // height: 100%;
+    // content: " ";
+    // top: 0;
+    z-index: 3;
+    // pointer-events: none;
+    cursor: move;
+    // width: calc(100% - var(--file-toggle-width));
+    // left: var(--file-toggle-width);
+}
+
 .drag-handle {
     width: 7px;
     margin: 0 -2px 0 0;

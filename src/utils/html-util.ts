@@ -10,6 +10,9 @@ export const escapeAttr = (html: string) => {
 };
 
 export function escapeHTML(html: string): string {
+    if (!html) {
+        return;
+    }
     let length = html.length;
     let start = 0;
     let i = 0;

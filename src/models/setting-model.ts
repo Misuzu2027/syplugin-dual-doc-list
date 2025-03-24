@@ -36,7 +36,7 @@ export class SettingConfig {
 
     // 数据库查询相关，暂不支持设置
     includeConcatFields: string[];
-    fullTextSearchBlockType: BlockType[];
+    includeBlockTypes: BlockType[];
 
 }
 

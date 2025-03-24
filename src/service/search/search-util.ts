@@ -75,7 +75,7 @@ export async function queryDocumentByDb(
     let settingConfig = SettingService.ins.SettingConfig;
     const startTime = performance.now(); // 记录开始时间
     let includeConcatFields = settingConfig.includeConcatFields;
-    let fullTextSearchBlockType = settingConfig.fullTextSearchBlockType;
+    let fullTextSearchBlockType = settingConfig.includeBlockTypes;
 
     let includeNotebookIds = [];
     if (isStrNotBlank(notebookId)) {

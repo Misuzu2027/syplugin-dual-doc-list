@@ -8,7 +8,6 @@
 
 import { fetchSyncPost, IWebSocketData } from "siyuan";
 import { isBoolean } from "./object-util";
-import { getNotebookIcon } from "./icon-util";
 
 
 
@@ -94,6 +93,16 @@ export async function setNotebookConf(notebook: NotebookId, conf: NotebookConf):
 
 
 // **************************************** File Tree ****************************************
+export async function changeSort(notebook: NotebookId, paths: string[]): Promise<any> {
+    let data = {
+        notebook: notebook,
+        paths: paths,
+    };
+    let url = '/api/filetree/changeSort';
+    return request(url, data);
+}
+
+
 export async function createDocWithMd(notebook: NotebookId, path: string, markdown: string): Promise<DocumentId> {
     let data = {
         notebook: notebook,
@@ -139,11 +148,12 @@ export async function removeDoc(notebook: NotebookId, path: string) {
 }
 
 
-export async function moveDocs(fromPaths: string[], toNotebook: NotebookId, toPath: string) {
+export async function moveDocs(fromPaths: string[], toNotebook: NotebookId, toPath: string, callback?: any) {
     let data = {
         fromPaths: fromPaths,
         toNotebook: toNotebook,
-        toPath: toPath
+        toPath: toPath,
+        callback: callback,
     };
     let url = '/api/filetree/moveDocs';
     return request(url, data);
