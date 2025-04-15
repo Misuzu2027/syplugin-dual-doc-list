@@ -508,6 +508,9 @@
             // focusSpanElement.click();
         }
         // 实现双击进入这个路径
+        if (lockPath) {
+            return;
+        }
         let docItemInfo: DocumentTreeItemInfo;
         for (const docItem of documentItems) {
             if (docItem.fileBlock.id == blockId) {
@@ -523,7 +526,6 @@
             }
             if (subFileCount && subFileCount > 0) {
                 let fileBlock = docItemInfo.fileBlock;
-                searchInputKey = "";
                 switchPath(fileBlock.box, blockId, fileBlock.path);
             }
         }
@@ -1141,7 +1143,7 @@
         // event.preventDefault();
         // event.dataTransfer.dropEffect = "move";
         dragenterCounter--;
-        if (dragenterCounter === 0) {
+        if (dragenterCounter <= 1) {
             const thisElement = event.currentTarget as HTMLElement;
             removeDocListDragClass(thisElement);
         }
@@ -1708,7 +1710,7 @@
                     data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px;"
                     class="b3-list-item b3-list-item--hide-action"
-                    draggable="true"
+                    draggable={EnvConfig.ins.isMobile ? "false" : "true"}
                     data-path={item.fileBlock.path}
                     on:click={docItemClick}
                     on:keydown={handleKeyDownDefault}

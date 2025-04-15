@@ -1,6 +1,7 @@
 import DocListSvelte from "@/components/doc-list/doc-list.svelte";
 import DocListDockSvelte from "@/components/siyuan/dock/doc-list-dock.svelte";
 import { EnvConfig } from "@/config/EnvConfig";
+import { hasClosestBySelector } from "@/libs/siyuan/hasClosest";
 import { CUSTOM_ICON_MAP } from "@/models/icon-constant";
 import { SettingService } from "@/service/setting/SettingService";
 import { findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
@@ -126,16 +127,30 @@ export class DocListManager {
             }
         });
 
+        let settingConfigEmbedDocListViewFlex = SettingService.ins.SettingConfig.embedDocListViewFlex;
+        let embedDualDocListFlex = 1;
+        if (!isNaN(settingConfigEmbedDocListViewFlex)) {
+            embedDualDocListFlex = settingConfigEmbedDocListViewFlex;
+        }
+
         let dragHandleElement = getDragElement();
 
-        if (document.querySelector("div.layout__dockl").contains(fileTreeDocElement)) {
+        let layoutDockElement = document.querySelector("div#layouts div.layout__dockl") as HTMLElement;
+
+        if (layoutDockElement.contains(fileTreeDocElement)) {
             docListElement.insertBefore(dragHandleElement, docListElement.firstChild)
             fileTreeDocElement.after(docListElement);
+
         } else {
+            layoutDockElement = document.querySelector("div#layouts div.layout__dockr") as HTMLElement;
             docListElement.append(dragHandleElement);
             fileTreeDocElement.before(docListElement);
         }
 
+
+        let layoutDockWidth = parseFloat(window.getComputedStyle(layoutDockElement).width);
+        let newLayoutDockWidth = layoutDockWidth * 2 * settingConfigEmbedDocListViewFlex;
+        layoutDockElement.style.width = newLayoutDockWidth + "px";
     }
 
     destroyEmbedDualDocList() {
@@ -146,6 +161,17 @@ export class DocListManager {
         let docListPageElementArray = document.querySelectorAll(`div.layout-tab-container div[data-id][${EmbedDualDocListElementAttrName}]`);
         if (docListPageElementArray) {
             for (const pageElement of docListPageElementArray) {
+                let layoutDockWElement = hasClosestBySelector(pageElement, "div.layout__dockl", true);
+                if (!layoutDockWElement) {
+                    layoutDockWElement = hasClosestBySelector(pageElement, "div.layout__dockr", true);
+                }
+                if (layoutDockWElement) {
+                    let dualDocListWidth = parseFloat(window.getComputedStyle(pageElement).width);
+                    let layoutDockWWidth = parseFloat(window.getComputedStyle(layoutDockWElement).width);
+                    let newLayoutDockWWidth = layoutDockWWidth - dualDocListWidth;
+                    layoutDockWElement.style.width = newLayoutDockWWidth + "px";
+                }
+
                 pageElement.remove();
             }
         }
