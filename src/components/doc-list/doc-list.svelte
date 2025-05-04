@@ -46,6 +46,7 @@
     import {
         clearSyFileTreeItemFocusClass,
         convertNumberToSordMode,
+        getActiveTab,
         getDesktopCurDocProtyle,
         getParentPath,
     } from "@/utils/siyuan-util";
@@ -91,7 +92,8 @@
         initData();
         initEvent();
         initSiyuanEventBus();
-        switchPath(null, null, null);
+
+        siwtchDefaultPath();
     });
 
     onDestroy(() => {
@@ -347,6 +349,45 @@
         //     searchInputKey,
         //     curPathSortMethod,
         // );
+    }
+    async function siwtchDefaultPath() {
+        let result = await getDefaultPath();
+        switchPath(result.notebookId, result.docId, result.docPath);
+        // updateDocList(
+        //     curPathNotebookId,
+        //     curPathDocId,
+        //     curPathDocPath,
+        //     searchInputKey,
+        //     curPathSortMethod,
+        // );
+    }
+
+    async function getDefaultPath(): Promise<{
+        notebookId: string;
+        docId: string;
+        docPath: string;
+    }> {
+        let defaultPathId = SettingService.ins.SettingConfig.defaultPathId;
+        let notebookId = null;
+        let docId = null;
+        let docPath = null;
+        if (isStrNotBlank(defaultPathId)) {
+            let notebook = EnvConfig.ins.notebookMap.get(defaultPathId);
+            if (notebook) {
+                notebookId = defaultPathId;
+            } else {
+                let docBlock = await getBlockByID(defaultPathId);
+                if (docBlock && docBlock.type == "d") {
+                    notebookId = docBlock.box;
+                    docId = defaultPathId;
+                    docPath = docBlock.path;
+                }
+            }
+        }
+        if (isStrNotBlank(defaultPathId) && isStrBlank(notebookId)) {
+            showMessage("二级文档列表：默认路径ID不存在，请重新设置。", 5000);
+        }
+        return { notebookId, docId, docPath };
     }
 
     function backPath() {
@@ -609,46 +650,6 @@
                 afterOpenDocTab(docTabPromise);
             },
         });
-    }
-
-    export function getActiveTab(): HTMLDivElement {
-        let tab = document.querySelector(
-            "div.layout__wnd--active ul.layout-tab-bar>li.item--focus",
-        );
-        let dataId: string = tab?.getAttribute("data-id");
-        if (!dataId) {
-            return null;
-        }
-        const activeTab: HTMLDivElement = document.querySelector(
-            `.layout-tab-container.fn__flex-1>div.protyle[data-id="${dataId}"]`,
-        ) as HTMLDivElement;
-        return activeTab;
-    }
-
-    export function getRangeByElement(element: Element): Range {
-        if (!element) {
-            return;
-        }
-        let elementRange = document.createRange();
-        elementRange.selectNodeContents(element);
-        return elementRange;
-    }
-
-    let bgFadeTimeoutId: NodeJS.Timeout;
-    export function bgFade(element: Element) {
-        if (bgFadeTimeoutId) {
-            clearTimeout(bgFadeTimeoutId);
-            bgFadeTimeoutId = null;
-        }
-        element.parentElement
-            .querySelectorAll(".protyle-wysiwyg--hl")
-            .forEach((hlItem) => {
-                hlItem.classList.remove("protyle-wysiwyg--hl");
-            });
-        element.classList.add("protyle-wysiwyg--hl");
-        bgFadeTimeoutId = setTimeout(function () {
-            element.classList.remove("protyle-wysiwyg--hl");
-        }, 1536);
     }
 
     async function docListSelectCurDoc() {
@@ -1637,6 +1638,7 @@
                     class="b3-button b3-button--outline fn__flex-center fn__size200"
                     style="width: 50px;font-size: 70%;padding:3px"
                     on:click={showAllDoc}
+                    on:contextmenu={siwtchDefaultPath}
                     >全部文档
                 </button>
             </div>

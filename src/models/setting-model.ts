@@ -8,6 +8,8 @@ export class SettingConfig {
     doubleClickToggleNotebook: boolean;
     // 显示二级文档列表 Docker
     dualDocListDockPosition: DockPosition;
+    // 默认显示路径，为空则是全部文档
+    defaultPathId: string;
 
     // 切换路径时使用笔记本排序方式。
     // lockSortMode: boolean;

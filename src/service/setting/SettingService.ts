@@ -109,6 +109,7 @@ function getDefaultSettingConfig() {
     defaultConfig.showEmbedDualDocList = true;
     defaultConfig.doubleClickToggleNotebook = false;
     defaultConfig.dualDocListDockPosition = "Hidden";
+    defaultConfig.defaultPathId = "";
 
     // defaultConfig.lockSortMode = false;
     defaultConfig.showSubDocOfSubDoc = false;

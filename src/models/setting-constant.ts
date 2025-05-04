@@ -18,6 +18,8 @@ export function getSettingTabArray(): TabProperty[] {
 
                 new ItemProperty({ key: "dualDocListDockPosition", type: "select", name: "二级文档列表Dock", description: "修改后会刷新界面", tips: "", options: getDockPositionElement(), afterUpdateCallback: dualDocListDockPositionAfterUpdate }),
 
+                new ItemProperty({ key: "defaultPathId", type: "text", name: "默认显示路径（为空则显示全部文档）", description: "填写笔记本ID或文档ID，如果ID不存在，则显示全部文档", tips: "", }),
+
             ]
 
         }),
