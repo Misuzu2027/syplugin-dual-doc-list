@@ -158,6 +158,28 @@ interface Window {
 }
 
 
+
+interface IMenu {
+    checked?: boolean,
+    iconClass?: string,
+    label?: string,
+    click?: (element: HTMLElement, event: MouseEvent) => boolean | void | Promise<boolean | void>
+    type?: "separator" | "submenu" | "readonly" | "empty",
+    accelerator?: string,
+    action?: string,
+    id?: string,
+    submenu?: IMenu[]
+    disabled?: boolean
+    icon?: string
+    iconHTML?: string
+    current?: boolean
+    bind?: (element: HTMLElement) => void
+    index?: number
+    element?: HTMLElement
+    ignore?: boolean
+    warning?: boolean
+}
+
 interface IBacklinkData {
     blockPaths: IBreadcrumb[];
     dom: string;

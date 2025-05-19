@@ -60,6 +60,7 @@
     import { SettingService } from "@/service/setting/SettingService";
     import { PathHistory } from "@/models/PathHistory";
     import { getDisplayName, pathPosix } from "@/libs/siyuan/pathName";
+    import { MenuItem } from "@/libs/siyuan/siyuan/menus/Menu";
 
     let rootElement: HTMLElement;
     let lastSelectDocItemIndex: number = -1;
@@ -113,40 +114,73 @@
         rootElement.addEventListener("click", (event: any) => {
             const target = event.target;
 
-            if (
-                target.tagName.toLowerCase() === "span" &&
-                target.hasAttribute("data-path-type")
-            ) {
-                let pathType = target.getAttribute("data-path-type");
-                let dataId = target.getAttribute("data-id");
+            if (target.tagName.toLowerCase() === "span") {
+                if (target.hasAttribute("data-path-type")) {
+                    let pathType = target.getAttribute("data-path-type");
+                    let dataId = target.getAttribute("data-id");
 
-                let newNotebookId = null;
-                let newDocId = null;
-                let newDocPath = null;
+                    let newNotebookId = null;
+                    let newDocId = null;
+                    let newDocPath = null;
 
-                if (pathType === "box") {
-                    newNotebookId = dataId;
-                    newDocId = null;
-                    newDocPath = "/";
-                } else if (pathType === "doc") {
-                    newNotebookId = curPathNotebookId;
-                    newDocId = dataId;
-                    newDocPath =
-                        curPathDocPath.split(dataId)[0] + dataId + ".sy";
+                    if (pathType === "box") {
+                        newNotebookId = dataId;
+                        newDocId = null;
+                        newDocPath = "/";
+                    } else if (pathType === "doc") {
+                        newNotebookId = curPathNotebookId;
+                        newDocId = dataId;
+                        newDocPath =
+                            curPathDocPath.split(dataId)[0] + dataId + ".sy";
+                    }
+                    if (isStrNotBlank(newNotebookId)) {
+                        console.log(
+                            "click path switch path ",
+                            newNotebookId,
+                            " ",
+                            newDocId,
+                            " ",
+                            newDocPath,
+                        );
+                        switchPath(newNotebookId, newDocId, newDocPath);
+                    }
                 }
-                if (isStrNotBlank(newNotebookId)) {
-                    console.log(
-                        "click path switch path ",
-                        newNotebookId,
-                        " ",
-                        newDocId,
-                        " ",
-                        newDocPath,
-                    );
-                    switchPath(newNotebookId, newDocId, newDocPath);
+                if (target.hasAttribute("data-siwtch-notebook")) {
+                    const rect = target.getBoundingClientRect();
+                    showSwitchNotebookMenus({ x: rect.right, y: rect.bottom });
+                    console.log("data-siwtch-notebook");
+                    event.stopPropagation();
                 }
             }
         });
+    }
+
+    async function showSwitchNotebookMenus(position: { x: number; y: number }) {
+        window.siyuan.menus.menu.remove();
+        EnvConfig.ins.refreshNotebookMap();
+        let notebookMap = EnvConfig.ins.notebookMap;
+        for (const [box, notebook] of notebookMap) {
+            if (notebook.closed) {
+                continue;
+            }
+            let icon = "";
+            if (box == curPathNotebookId) {
+                icon = "iconSelect";
+            }
+            window.siyuan.menus.menu.append(
+                new MenuItem({
+                    icon: icon,
+                    label: getBoxIconAndNameHtmlByNotebook(notebook),
+                    click: () => {
+                        switchPath(box, null, null);
+                    },
+                }).element,
+            );
+        }
+
+        window.siyuan.menus.menu.popup(position);
+
+        // console.log(`文档右击位置 x : ${event.clientX}, y : ${event.clientY}`);
     }
 
     function initSiyuanEventBus() {
@@ -854,7 +888,7 @@
     }
 
     async function updateCurPath(parentDocId: string) {
-        let showCurPathTemp = "/";
+        let showCurPathTemp = `<span class="doc-path" style="font-size:1.4em" data-siwtch-notebook>/</span>`;
 
         if (isStrNotBlank(parentDocId)) {
             let parentDocInfo = await getBlockByID(parentDocId);
@@ -880,10 +914,23 @@
             return "";
         }
 
+        // let icon = getNotebookIcon(notebook.icon);
+
+        // let iconHtml = `<span class="box-path__icon doc-path" style="font-size:1.1em"  data-siwtch-notebook>${icon}</span>`;
+        // let nameHtml = `<span class="doc-path" data-path-type="box" data-id="${box}"> ${notebook.name}</span>`;
+        let boxPathHtml = getBoxIconAndNameHtmlByNotebook(notebook);
+
+        return boxPathHtml;
+    }
+
+    function getBoxIconAndNameHtmlByNotebook(notebook: INotebook) {
+        if (!notebook) {
+            return "";
+        }
         let icon = getNotebookIcon(notebook.icon);
 
-        let iconHtml = `<span class="box-path__icon">${icon}</span>`;
-        let nameHtml = `<span class="doc-path" data-path-type="box" data-id="${box}"> ${notebook.name}</span>`;
+        let iconHtml = `<span class="box-path__icon doc-path" style="font-size:1.1em"  data-siwtch-notebook>${icon}</span>`;
+        let nameHtml = `<span class="doc-path" data-path-type="box" data-id="${notebook.id}"> ${notebook.name}</span>`;
         let boxPathHtml = iconHtml + nameHtml;
 
         return boxPathHtml;
@@ -1603,7 +1650,11 @@
             </label>
         </div>
         <!-- 路径信息 -->
-        <div class="scroll-container" on:touchmove|stopPropagation={() => {}}>
+        <div
+            class="scroll-container"
+            style="padding-left:8px"
+            on:touchmove|stopPropagation={() => {}}
+        >
             {@html showCurPath}
         </div>
 

@@ -8,6 +8,7 @@
 
 import { fetchSyncPost, IWebSocketData } from "siyuan";
 import { isBoolean } from "./object-util";
+import { getNotebookIcon } from "./icon-util";
 
 
 
@@ -35,12 +36,15 @@ export async function getNotebookMapByApi(): Promise<Map<string, INotebook>> {
 }
 
 
-export function getNotebookMap(notebooks: INotebook[]): Map<string, INotebook> {
+export function getNotebookMap(notebooks: INotebook[], showClosed: boolean = false): Map<string, INotebook> {
     let notebookMap: Map<string, INotebook> = new Map();
     if (!notebooks) {
         return notebookMap;
     }
     for (const notebook of notebooks) {
+        if (!showClosed && notebook.closed) {
+            continue;
+        }
         notebookMap.set(notebook.id, notebook);
     }
     return notebookMap;
