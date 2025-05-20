@@ -139,7 +139,7 @@ type doOperation = {
 
 interface Window {
     siyuan: {
-        config: any;
+        config?: Config.IConf;
         notebooks: any;
         menus: any;
         dialogs: any;

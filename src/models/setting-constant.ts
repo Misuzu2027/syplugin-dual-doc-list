@@ -12,7 +12,7 @@ export function getSettingTabArray(): TabProperty[] {
     tabProperties.push(
         new TabProperty({
             key: "function-setting", name: "功能", iconKey: "iconFilter", props: [
-                new ItemProperty({ key: "showEmbedDualDocList", type: "switch", name: "显示嵌入的二级文档列表", description: "", tips: "" }),
+                new ItemProperty({ key: "showEmbedDualDocList", type: "switch", name: "显示嵌入的二级文档列表", description: "", tips: "", afterUpdateCallback: showEmbedDualDocListAfterUpdate }),
 
                 new ItemProperty({ key: "doubleClickToggleNotebook", type: "switch", name: "双击展开/折叠笔记本", description: "", tips: "" }),
 
@@ -50,9 +50,15 @@ export function getSettingTabArray(): TabProperty[] {
     return tabProperties;
 }
 
+function showEmbedDualDocListAfterUpdate(key, value) {
+    DocListManager.ins.firstLoadEmbedDualDocList = false;
+}
+
+
 function dualDocListDockPositionAfterUpdate(key, value) {
     DocListManager.ins.refreshDocListDock(value);
 }
+
 
 
 function getDockPositionElement(): IOption[] {

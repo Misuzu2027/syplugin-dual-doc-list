@@ -77,12 +77,14 @@ export class DocListManager {
         }
 
     }
+    firstLoadEmbedDualDocList: boolean = true;
 
     intervalCheckEmbedDualDocList() {
         let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
         if (showEmbedDualDocList) {
             this.createEmbedDualDocList();
         } else {
+            this.firstLoadEmbedDualDocList = false;
             this.destroyEmbedDualDocList();
         }
     }
@@ -130,7 +132,7 @@ export class DocListManager {
         let settingConfigEmbedDocListViewFlex = SettingService.ins.SettingConfig.embedDocListViewFlex;
         let embedDualDocListFlex = 1;
         if (!isNaN(settingConfigEmbedDocListViewFlex)) {
-            embedDualDocListFlex = settingConfigEmbedDocListViewFlex;
+            embedDualDocListFlex = Number(settingConfigEmbedDocListViewFlex);
         }
 
         let dragHandleElement = getDragElement();
@@ -140,17 +142,25 @@ export class DocListManager {
         if (layoutDockElement.contains(fileTreeDocElement)) {
             docListElement.insertBefore(dragHandleElement, docListElement.firstChild)
             fileTreeDocElement.after(docListElement);
-
         } else {
             layoutDockElement = document.querySelector("div#layouts div.layout__dockr") as HTMLElement;
             docListElement.append(dragHandleElement);
             fileTreeDocElement.before(docListElement);
         }
-
-
         let layoutDockWidth = parseFloat(window.getComputedStyle(layoutDockElement).width);
-        let newLayoutDockWidth = layoutDockWidth * 2 * settingConfigEmbedDocListViewFlex;
+        if (this.firstLoadEmbedDualDocList) {
+            this.firstLoadEmbedDualDocList = false;
+            let fileTreeWidth = findFileTreeWidth(window.siyuan.config.uiLayout);
+            console.log("window.siyuan.config.uiLayout fileTreeWidth", fileTreeWidth)
+            if (fileTreeWidth) {
+                layoutDockWidth = fileTreeWidth / (1 + embedDualDocListFlex);
+            }
+        }
+
+
+        let newLayoutDockWidth = layoutDockWidth * (1 + embedDualDocListFlex);;
         layoutDockElement.style.width = newLayoutDockWidth + "px";
+        // triggerMouseDownMoveUp(layoutDockElement.querySelector(".layout__resize"))
     }
 
     destroyEmbedDualDocList() {
@@ -161,15 +171,19 @@ export class DocListManager {
         let docListPageElementArray = document.querySelectorAll(`div.layout-tab-container div[data-id][${EmbedDualDocListElementAttrName}]`);
         if (docListPageElementArray) {
             for (const pageElement of docListPageElementArray) {
-                let layoutDockWElement = hasClosestBySelector(pageElement, "div.layout__dockl", true);
-                if (!layoutDockWElement) {
-                    layoutDockWElement = hasClosestBySelector(pageElement, "div.layout__dockr", true);
+                let layoutDockElement = hasClosestBySelector(pageElement, "div.layout__dockl", true);
+                if (!layoutDockElement) {
+                    layoutDockElement = hasClosestBySelector(pageElement, "div.layout__dockr", true);
                 }
-                if (layoutDockWElement) {
-                    let dualDocListWidth = parseFloat(window.getComputedStyle(pageElement).width);
-                    let layoutDockWWidth = parseFloat(window.getComputedStyle(layoutDockWElement).width);
+                if (layoutDockElement) {
+                    // let dualDocListWidth = parseFloat(window.getComputedStyle(pageElement).width);
+                    // let layoutDockWWidth = parseFloat(window.getComputedStyle(layoutDockWElement).width);
+                    let dualDocListWidth = pageElement.getBoundingClientRect().width;
+                    let layoutDockWWidth = layoutDockElement.getBoundingClientRect().width;
                     let newLayoutDockWWidth = layoutDockWWidth - dualDocListWidth;
-                    layoutDockWElement.style.width = newLayoutDockWWidth + "px";
+                    // console.log("destroyEmbedDualDocList dualDocListWidth ", dualDocListWidth)
+                    layoutDockElement.style.width = newLayoutDockWWidth + "px";
+                    // triggerMouseDownMoveUp(layoutDockElement.querySelector(".layout__resize"))
                 }
 
                 pageElement.remove();
@@ -595,3 +609,62 @@ function createSwitchEmbedDualDocListButtonEle() {
 }
 
 
+type AnyObject = { [key: string]: any };
+
+function findFileTreeWidth(obj: AnyObject): number | undefined {
+    if (Array.isArray(obj)) {
+        for (const item of obj) {
+            const result = findFileTreeWidth(item);
+            if (result !== undefined) return result;
+        }
+    } else if (typeof obj === "object" && obj !== null) {
+        if (obj.type === "file" && obj.size?.width !== undefined) {
+            return obj.size.width;
+        }
+
+        for (const key in obj) {
+            const result = findFileTreeWidth(obj[key]);
+            if (result !== undefined) return result;
+        }
+    }
+    return undefined;
+}
+
+function triggerMouseDownMoveUp(element: HTMLElement) {
+    if (!element) {
+      console.warn("Invalid element passed to triggerMouseDownMoveUp");
+      return;
+    }
+  
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+  
+    const mouseDownEvent = new MouseEvent("mousedown", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: centerX,
+      clientY: centerY,
+    });
+  
+    const mouseMoveEvent = new MouseEvent("mousemove", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: centerX,
+      clientY: centerY,
+    });
+  
+    const mouseUpEvent = new MouseEvent("mouseup", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: centerX,
+      clientY: centerY,
+    });
+  
+    element.dispatchEvent(mouseDownEvent);
+    element.dispatchEvent(mouseMoveEvent);
+    element.dispatchEvent(mouseUpEvent);
+  }
