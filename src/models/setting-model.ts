@@ -31,6 +31,7 @@ export class SettingConfig {
 
     // 样式相关
     embedDocListViewFlex: number;
+    showFileTreeTopSwitchEmbedDualDocListButton: boolean;
 
     // 双击阈值
     doubleClickTimeout: number;

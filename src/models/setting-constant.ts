@@ -38,6 +38,7 @@ export function getSettingTabArray(): TabProperty[] {
         new TabProperty({
             key: "style-setting", name: "样式", iconKey: "iconPlugin", props: [
                 new ItemProperty({ key: "embedDocListViewFlex", type: "number", name: "二级文档列表与文档树比例", description: "数字越大二级文档列表越宽。", tips: "", min: 0, }),
+                new ItemProperty({ key: "showFileTreeTopSwitchEmbedDualDocListButton", type: "switch", name: "文档树顶部显示切换嵌入二级文档列表按钮", description: "", tips: "", min: 0, }),
             ]
         }),
         new TabProperty({
@@ -51,7 +52,7 @@ export function getSettingTabArray(): TabProperty[] {
 }
 
 function showEmbedDualDocListAfterUpdate(key, value) {
-    DocListManager.ins.firstLoadEmbedDualDocList = false;
+    
 }
 
 

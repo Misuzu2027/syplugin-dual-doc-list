@@ -623,6 +623,14 @@ export async function currentTime(): Promise<number> {
     return request('/api/system/currentTime', {});
 }
 
+export async function setUILayout(errorExit: boolean, layout: any): Promise<number> {
+    let data = {
+        errorExit: errorExit,
+        layout: layout
+    }
+    return request('/api/system/setUILayout', data);
+}
+
 
 
 export async function getBacklinkDoc(defID: string, refTreeID: string, keyword: string, containChildren: boolean): Promise<{ backlinks: IBacklinkData[] }> {

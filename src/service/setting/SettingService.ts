@@ -120,6 +120,7 @@ function getDefaultSettingConfig() {
 
     // 样式相关
     defaultConfig.embedDocListViewFlex = 1.0;
+    defaultConfig.showFileTreeTopSwitchEmbedDualDocListButton = true;
 
     // 其他
     defaultConfig.doubleClickTimeout = 200;

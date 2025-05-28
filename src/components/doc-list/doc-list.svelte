@@ -46,6 +46,7 @@
     import {
         clearSyFileTreeItemFocusClass,
         convertNumberToSordMode,
+        fileTreeSelectDoc,
         getActiveTab,
         getDesktopCurDocProtyle,
         getParentPath,
@@ -520,7 +521,7 @@
             return;
         }
 
-        performDoubleClickAction(item.fileBlock.id);
+        enterSubdir(item.fileBlock.id);
     }
 
     function updateLastSelectedItemIndex(blockId: string | null) {
@@ -557,7 +558,7 @@
         } else {
             clickCount = 0;
             clearTimeout(clickTimeoutId);
-            performDoubleClickAction(blockId);
+            performDoubleClickAction(event);
         }
     }
 
@@ -573,16 +574,27 @@
         return null;
     }
 
-    async function performDoubleClickAction(blockId: string) {
-        const focusSpanElement = document.querySelector(
-            `#layouts div.file-tree.sy__file > div.block__icons > span[data-type="focus"]`,
-        ) as HTMLElement;
-
-        if (focusSpanElement) {
-            // 暂时不聚焦一级文档树。
-            // focusSpanElement.click();
-        }
+    async function performDoubleClickAction(event: MouseEvent) {
         // 实现双击进入这个路径
+        fileTreeFocusDoc(event);
+    }
+
+    function fileTreeFocusDoc(event: MouseEvent) {
+        // const focusSpanElement = document.querySelector(
+        //     `#layouts div.file-tree.sy__file > div.block__icons > span[data-type="focus"]`,
+        // ) as HTMLElement;
+
+        // if (focusSpanElement) {
+        //     focusSpanElement.click();
+        // }
+
+        let target = event.currentTarget as HTMLElement;
+        const notebookId = target.parentElement.getAttribute("data-url");
+        const path = target.getAttribute("data-path");
+        fileTreeSelectDoc(notebookId, path);
+    }
+
+    async function enterSubdir(blockId: string) {
         if (lockPath) {
             return;
         }
@@ -595,9 +607,14 @@
         }
         if (docItemInfo) {
             let subFileCount = docItemInfo.fileBlock.subFileCount;
-            if (subFileCount === undefined || subFileCount === null) {
+            if (
+                subFileCount === undefined ||
+                subFileCount === null ||
+                subFileCount == 0
+            ) {
                 let docInfo = await getDocInfo(blockId);
                 subFileCount = docInfo.subFileCount;
+                docItemInfo.fileBlock.subFileCount = docInfo.subFileCount;
             }
             if (subFileCount && subFileCount > 0) {
                 let fileBlock = docItemInfo.fileBlock;

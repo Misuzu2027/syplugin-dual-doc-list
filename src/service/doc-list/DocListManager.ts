@@ -4,14 +4,12 @@ import { EnvConfig } from "@/config/EnvConfig";
 import { hasClosestBySelector } from "@/libs/siyuan/hasClosest";
 import { CUSTOM_ICON_MAP } from "@/models/icon-constant";
 import { SettingService } from "@/service/setting/SettingService";
-import { findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
+import { setUILayout } from "@/utils/api";
+import { convertTextToFirstElement, findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
 import Instance from "@/utils/Instance";
 import { clearSyFileTreeItemFocusClass, isElementHidden } from "@/utils/siyuan-util";
 
-const EmbedDualDocListElementAttrName = "data-misuzu2027-embed-dualDocList";
 
-
-const DOC_LIST_DOCK_TYPE = "misuzu2027_doc_list_dock";
 
 export class DocListManager {
 
@@ -21,27 +19,20 @@ export class DocListManager {
     }
 
 
-    private checkEmbedIntervalId;
-
-    private embedDocListSvelte: DocListSvelte;
-
-    public dockDocListSvelte: DocListDockSvelte;
-
     init() {
         this.initElementEventListener();
         this.initInterval();
         addDocListDock();
-        addObserveCommonMenuElement();
+        // addObserveCommonMenuElement();
     }
 
 
     destroy() {
-        this.destroyInterval();
         this.destroyElementEventListener();
-        this.destroyEmbedDualDocList();
-        destroyObserveCommonMenuElement();
+        this.destroyInterval();
+        destroyEmbedDualDocList();
+        // destroyObserveCommonMenuElement();
     }
-
 
 
     initElementEventListener() {
@@ -57,13 +48,13 @@ export class DocListManager {
         if (EnvConfig.ins.isMobile) {
             return;
         }
-        this.checkEmbedIntervalId = setInterval(() => this.intervalCheckEmbedDualDocList(), 800)
+        checkEmbedIntervalId = setInterval(() => intervalCheckEmbedDualDocList(), 800)
     }
 
     destroyInterval() {
-        if (this.checkEmbedIntervalId) {
-            clearInterval(this.checkEmbedIntervalId);
-            this.checkEmbedIntervalId = null;
+        if (checkEmbedIntervalId) {
+            clearInterval(checkEmbedIntervalId);
+            checkEmbedIntervalId = null;
         }
     }
 
@@ -76,119 +67,6 @@ export class DocListManager {
             addDocListDock();
         }
 
-    }
-    firstLoadEmbedDualDocList: boolean = true;
-
-    intervalCheckEmbedDualDocList() {
-        let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
-        if (showEmbedDualDocList) {
-            this.createEmbedDualDocList();
-        } else {
-            this.firstLoadEmbedDualDocList = false;
-            this.destroyEmbedDualDocList();
-        }
-    }
-
-    createEmbedDualDocList() {
-        let fileTreeDocElement = document.querySelector("#layouts  div.layout-tab-container div.file-tree.sy__file");
-        if (!fileTreeDocElement) {
-            return;
-        }
-        let docTreeId = fileTreeDocElement.getAttribute("data-id");
-        let dualDocListElement: HTMLElement = null;
-        let oldDocListElementArray = document.querySelectorAll(`div.layout-tab-container div[${EmbedDualDocListElementAttrName}]`);
-
-        if (oldDocListElementArray) {
-            for (const element of oldDocListElementArray) {
-                if (element.getAttribute("data-id") == docTreeId) {
-                    dualDocListElement = element as HTMLElement;
-                } else {
-                    element.remove();
-                }
-            }
-        }
-
-        if (dualDocListElement) {
-            return;
-        }
-
-        if (this.embedDocListSvelte) {
-            this.embedDocListSvelte.$destroy();
-            this.embedDocListSvelte = null;
-        }
-
-        let docListElement = getEmbedDualDocListElement();
-        docListElement.setAttribute("data-id", docTreeId);
-        if (isElementHidden(fileTreeDocElement)) {
-            docListElement.classList.add("fn__none");
-        }
-
-        this.embedDocListSvelte = new DocListSvelte({
-            target: docListElement,
-            props: {
-            }
-        });
-
-        let settingConfigEmbedDocListViewFlex = SettingService.ins.SettingConfig.embedDocListViewFlex;
-        let embedDualDocListFlex = 1;
-        if (!isNaN(settingConfigEmbedDocListViewFlex)) {
-            embedDualDocListFlex = Number(settingConfigEmbedDocListViewFlex);
-        }
-
-        let dragHandleElement = getDragElement();
-
-        let layoutDockElement = document.querySelector("div#layouts div.layout__dockl") as HTMLElement;
-
-        if (layoutDockElement.contains(fileTreeDocElement)) {
-            docListElement.insertBefore(dragHandleElement, docListElement.firstChild)
-            fileTreeDocElement.after(docListElement);
-        } else {
-            layoutDockElement = document.querySelector("div#layouts div.layout__dockr") as HTMLElement;
-            docListElement.append(dragHandleElement);
-            fileTreeDocElement.before(docListElement);
-        }
-        let layoutDockWidth = parseFloat(window.getComputedStyle(layoutDockElement).width);
-        if (this.firstLoadEmbedDualDocList) {
-            this.firstLoadEmbedDualDocList = false;
-            let fileTreeWidth = findFileTreeWidth(window.siyuan.config.uiLayout);
-            console.log("window.siyuan.config.uiLayout fileTreeWidth", fileTreeWidth)
-            if (fileTreeWidth) {
-                layoutDockWidth = fileTreeWidth / (1 + embedDualDocListFlex);
-            }
-        }
-
-
-        let newLayoutDockWidth = layoutDockWidth * (1 + embedDualDocListFlex);;
-        layoutDockElement.style.width = newLayoutDockWidth + "px";
-        // triggerMouseDownMoveUp(layoutDockElement.querySelector(".layout__resize"))
-    }
-
-    destroyEmbedDualDocList() {
-        if (this.embedDocListSvelte) {
-            this.embedDocListSvelte.$destroy();
-            this.embedDocListSvelte = null;
-        }
-        let docListPageElementArray = document.querySelectorAll(`div.layout-tab-container div[data-id][${EmbedDualDocListElementAttrName}]`);
-        if (docListPageElementArray) {
-            for (const pageElement of docListPageElementArray) {
-                let layoutDockElement = hasClosestBySelector(pageElement, "div.layout__dockl", true);
-                if (!layoutDockElement) {
-                    layoutDockElement = hasClosestBySelector(pageElement, "div.layout__dockr", true);
-                }
-                if (layoutDockElement) {
-                    // let dualDocListWidth = parseFloat(window.getComputedStyle(pageElement).width);
-                    // let layoutDockWWidth = parseFloat(window.getComputedStyle(layoutDockWElement).width);
-                    let dualDocListWidth = pageElement.getBoundingClientRect().width;
-                    let layoutDockWWidth = layoutDockElement.getBoundingClientRect().width;
-                    let newLayoutDockWWidth = layoutDockWWidth - dualDocListWidth;
-                    // console.log("destroyEmbedDualDocList dualDocListWidth ", dualDocListWidth)
-                    layoutDockElement.style.width = newLayoutDockWWidth + "px";
-                    // triggerMouseDownMoveUp(layoutDockElement.querySelector(".layout__resize"))
-                }
-
-                pageElement.remove();
-            }
-        }
     }
 
     clickCount: number = 0;
@@ -260,7 +138,7 @@ export class DocListManager {
             return;
         }
         // 如果是笔记本，判断一下是否启用双击切换文档折叠。
-        if (targetLiElementType == "navigation-root" && this.dockDocListSvelte) {
+        if (targetLiElementType == "navigation-root" && dockDocListSvelte) {
             if (this.handleNotebookDoubleClick(event, targetLiElement)) {
                 return;
             }
@@ -301,20 +179,192 @@ export class DocListManager {
             return;
         }
 
-        if (this.embedDocListSvelte) {
-            this.embedDocListSvelte.switchPath(notebookId, docId, docPath);
+        if (embedDocListSvelte) {
+            embedDocListSvelte.switchPath(notebookId, docId, docPath);
         }
-        if (this.dockDocListSvelte) {
-            this.dockDocListSvelte.switchPath(notebookId, docId, docPath)
+        if (dockDocListSvelte) {
+            dockDocListSvelte.switchPath(notebookId, docId, docPath)
+        }
+    }
+
+}
+
+
+let checkEmbedIntervalId;
+
+let embedDocListSvelte: DocListSvelte;
+
+let dockDocListSvelte: DocListDockSvelte;
+
+let firstLoadEmbedDualDocList: boolean = true;
+
+
+const EmbedDualDocListElementAttrName = "data-misuzu2027-embed-dualDocList";
+
+const DOC_LIST_DOCK_TYPE = "misuzu2027_doc_list_dock";
+
+const SwitchEmbedDualDocListElementId = "misuzu2027_switch-embed-dual-doc-list";
+
+
+
+function intervalCheckEmbedDualDocList() {
+    let showFileTreeTopSwitchEmbedDualDocListButton = SettingService.ins.SettingConfig.showFileTreeTopSwitchEmbedDualDocListButton;
+    if (showFileTreeTopSwitchEmbedDualDocListButton) {
+        createSwitchEmbedDualDocListButtonForFileTreeTop();
+    } else {
+        destorySwitchEmbedDualDocListButtonForFileTreeTop();
+    }
+    let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
+    if (showEmbedDualDocList) {
+        createEmbedDualDocList();
+    } else {
+        firstLoadEmbedDualDocList = false;
+        destroyEmbedDualDocList();
+    }
+}
+
+function createSwitchEmbedDualDocListButtonForFileTreeTop() {
+    let fileTreeDocElement = document.querySelector("#layouts  div.layout-tab-container div.file-tree.sy__file");
+    if (!fileTreeDocElement) {
+        return;
+    }
+
+    if (fileTreeDocElement.querySelector(`#${SwitchEmbedDualDocListElementId}`)) {
+        return;
+    }
+    let focusSpanElement = fileTreeDocElement.querySelector(`div.block__icons span[data-type="focus"]`)
+    if (!focusSpanElement) {
+        return;
+    }
+
+    let switchEmbedDualDocListSpanElement =
+        convertTextToFirstElement(`<span data-type="switchEmbedDualDocList" id="${SwitchEmbedDualDocListElementId}" class="block__icon b3-tooltips b3-tooltips__sw" aria-label="切换嵌入的二级文档列表"><svg><use xlink:href="#${CUSTOM_ICON_MAP.iconDualDocList.id}"></use></svg></span>`);
+    let spanSpaceElement = convertTextToFirstElement(`<span class="fn__space"></span>`);
+    focusSpanElement.parentElement.insertBefore(switchEmbedDualDocListSpanElement, focusSpanElement);
+    switchEmbedDualDocListSpanElement.append(spanSpaceElement);
+    switchEmbedDualDocListSpanElement.addEventListener("click", async (event) => {
+        // event.stopPropagation();
+        // event.preventDefault();
+        let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
+        await SettingService.ins.updateSettingCofnigValue("showEmbedDualDocList", !showEmbedDualDocList)
+        intervalCheckEmbedDualDocList();
+        window.siyuan.menus.menu.remove();
+    })
+}
+
+
+function destorySwitchEmbedDualDocListButtonForFileTreeTop() {
+    let fileTreeDocElement = document.querySelector("#layouts  div.layout-tab-container div.file-tree.sy__file");
+    if (!fileTreeDocElement) {
+        return;
+    }
+    let switchElement = fileTreeDocElement.querySelector(`#${SwitchEmbedDualDocListElementId}`);
+    if (!switchElement) {
+        return;
+    }
+    switchElement.remove();
+}
+
+
+function createEmbedDualDocList() {
+    let fileTreeDocElement = document.querySelector("#layouts  div.layout-tab-container div.file-tree.sy__file");
+    if (!fileTreeDocElement) {
+        return;
+    }
+    let docTreeId = fileTreeDocElement.getAttribute("data-id");
+    let dualDocListElement: HTMLElement = null;
+    let oldDocListElementArray = document.querySelectorAll(`div.layout-tab-container div[${EmbedDualDocListElementAttrName}]`);
+
+    if (oldDocListElementArray) {
+        for (const element of oldDocListElementArray) {
+            if (element.getAttribute("data-id") == docTreeId) {
+                dualDocListElement = element as HTMLElement;
+            } else {
+                element.remove();
+            }
+        }
+    }
+
+    if (dualDocListElement) {
+        return;
+    }
+
+    if (embedDocListSvelte) {
+        embedDocListSvelte.$destroy();
+        embedDocListSvelte = null;
+    }
+
+    let docListElement = getEmbedDualDocListElement();
+    docListElement.setAttribute("data-id", docTreeId);
+    if (isElementHidden(fileTreeDocElement)) {
+        docListElement.classList.add("fn__none");
+    }
+
+    embedDocListSvelte = new DocListSvelte({
+        target: docListElement,
+        props: {
+        }
+    });
+
+    let settingConfigEmbedDocListViewFlex = SettingService.ins.SettingConfig.embedDocListViewFlex;
+    let embedDualDocListFlex = 1;
+    if (!isNaN(settingConfigEmbedDocListViewFlex)) {
+        embedDualDocListFlex = Number(settingConfigEmbedDocListViewFlex);
+    }
+
+    let dragHandleElement = getDragElement();
+
+    let layoutDockElement = document.querySelector("div#layouts div.layout__dockl") as HTMLElement;
+
+    if (layoutDockElement.contains(fileTreeDocElement)) {
+        docListElement.insertBefore(dragHandleElement, docListElement.firstChild)
+        fileTreeDocElement.after(docListElement);
+    } else {
+        layoutDockElement = document.querySelector("div#layouts div.layout__dockr") as HTMLElement;
+        docListElement.append(dragHandleElement);
+        fileTreeDocElement.before(docListElement);
+    }
+    let layoutDockWidth = parseFloat(window.getComputedStyle(layoutDockElement).width);
+    if (firstLoadEmbedDualDocList) {
+        firstLoadEmbedDualDocList = false;
+        let fileTreeWidth = findFileTreeWidth(window.siyuan.config.uiLayout);
+        // console.log("window.siyuan.config.uiLayout fileTreeWidth", fileTreeWidth)
+        if (fileTreeWidth) {
+            layoutDockWidth = fileTreeWidth / (1 + embedDualDocListFlex);
         }
     }
 
 
-
-
-
-
+    let newLayoutDockWidth = layoutDockWidth * (1 + embedDualDocListFlex);;
+    updateFileTreeDockWidthAndConf(layoutDockElement, newLayoutDockWidth);
 }
+
+function destroyEmbedDualDocList() {
+
+    if (embedDocListSvelte) {
+        embedDocListSvelte.$destroy();
+        embedDocListSvelte = null;
+    }
+    let docListPageElementArray = document.querySelectorAll(`div.layout-tab-container div[data-id][${EmbedDualDocListElementAttrName}]`);
+    if (docListPageElementArray) {
+        for (const pageElement of docListPageElementArray) {
+            let layoutDockElement = hasClosestBySelector(pageElement, "div.layout__dockl", true);
+            if (!layoutDockElement) {
+                layoutDockElement = hasClosestBySelector(pageElement, "div.layout__dockr", true);
+            }
+            if (layoutDockElement) {
+                let dualDocListidth = pageElement.getBoundingClientRect().width;
+                let layoutDockWidth = layoutDockElement.getBoundingClientRect().width;
+                let newLayoutDockWidth = layoutDockWidth - dualDocListidth;
+                updateFileTreeDockWidthAndConf(layoutDockElement, newLayoutDockWidth)
+
+            }
+
+            pageElement.remove();
+        }
+    }
+}
+
 
 function getEmbedDualDocListElement(): HTMLElement {
     let docListElement = document.createElement("div");
@@ -431,10 +481,6 @@ function getDragElement(): HTMLElement {
 
 
 
-
-
-
-
 function addDocListDock() {
     if (!EnvConfig.ins || !EnvConfig.ins.plugin) {
         console.log("添加文档列表 dock 失败。")
@@ -463,26 +509,26 @@ function addDocListDock() {
             data: {},
             type: DOC_LIST_DOCK_TYPE,
             resize() {
-                if (DocListManager.ins.dockDocListSvelte) {
-                    DocListManager.ins.dockDocListSvelte.restView();
+                if (dockDocListSvelte) {
+                    dockDocListSvelte.restView();
                 }
             },
             update() {
-                if (DocListManager.ins.dockDocListSvelte) {
-                    DocListManager.ins.dockDocListSvelte.restView();
+                if (dockDocListSvelte) {
+                    dockDocListSvelte.restView();
                 }
             },
             init() {
                 this.element.innerHTML = "";
-                DocListManager.ins.dockDocListSvelte = new DocListDockSvelte({
+                dockDocListSvelte = new DocListDockSvelte({
                     target: this.element,
                     props: {
                     }
                 });
             },
             destroy() {
-                if (DocListManager.ins.dockDocListSvelte) {
-                    DocListManager.ins.dockDocListSvelte.$destroy();
+                if (dockDocListSvelte) {
+                    dockDocListSvelte.$destroy();
                 }
             }
         });
@@ -527,8 +573,8 @@ function destoryDocListDock() {
     let dockContainerElement = document.querySelector(`span.sy__${pluginID}`);
     let dockBtnElement = document.querySelector(`div[data-type="${pluginID}"]`);
 
-    if (DocListManager.ins.dockDocListSvelte) {
-        DocListManager.ins.dockDocListSvelte.$destroy();
+    if (dockDocListSvelte) {
+        dockDocListSvelte.$destroy();
     }
     if (dockBtnElement) {
         dockBtnElement.remove();
@@ -539,74 +585,74 @@ function destoryDocListDock() {
 }
 
 
-let observerCommonMenuElement: MutationObserver;
+// let observerCommonMenuElement: MutationObserver;
 
-function addObserveCommonMenuElement() {
-    if (EnvConfig.ins.isMobile) {
-        return;
-    }
-    let protyleUtilElement = document.querySelector("#commonMenu > div.b3-menu__items");
-    if (protyleUtilElement.getAttribute("data-misuzu2027-observed") == "1") {
-        return;
-    }
-    if (observerCommonMenuElement) {
-        observerCommonMenuElement.disconnect;
-    }
+// function addObserveCommonMenuElement() {
+//     if (EnvConfig.ins.isMobile) {
+//         return;
+//     }
+//     let protyleUtilElement = document.querySelector("#commonMenu > div.b3-menu__items");
+//     if (protyleUtilElement.getAttribute("data-misuzu2027-observed") == "1") {
+//         return;
+//     }
+//     if (observerCommonMenuElement) {
+//         observerCommonMenuElement.disconnect;
+//     }
 
-    // 创建一个 MutationObserver 实例，并传入回调函数
-    observerCommonMenuElement = new MutationObserver((mutationsList, observer) => {
+//     // 创建一个 MutationObserver 实例，并传入回调函数
+//     observerCommonMenuElement = new MutationObserver((mutationsList, observer) => {
 
-        let childNodes = protyleUtilElement.childNodes;
-        if (childNodes.length == 3
-            && childNodes[0].childNodes[1].textContent == "新建笔记本") {
-            createSwitchEmbedDualDocListButtonEle();
-        }
+//         let childNodes = protyleUtilElement.childNodes;
+//         if (childNodes.length == 3
+//             && childNodes[0].childNodes[1].textContent == "新建笔记本") {
+//             createSwitchEmbedDualDocListButtonEle();
+//         }
 
-        return;
-    });
+//         return;
+//     });
 
-    // 配置 MutationObserver 监听的类型
-    const config = { childList: true, };
-    protyleUtilElement.setAttribute("data-misuzu2027-observed", "1")
-    // 开始观察目标节点
-    observerCommonMenuElement.observe(protyleUtilElement, config);
-}
+//     // 配置 MutationObserver 监听的类型
+//     const config = { childList: true, };
+//     protyleUtilElement.setAttribute("data-misuzu2027-observed", "1")
+//     // 开始观察目标节点
+//     observerCommonMenuElement.observe(protyleUtilElement, config);
+// }
 
-function destroyObserveCommonMenuElement() {
-    observerCommonMenuElement.disconnect();
-}
+// function destroyObserveCommonMenuElement() {
+//     observerCommonMenuElement.disconnect();
+// }
 
 
-function createSwitchEmbedDualDocListButtonEle() {
-    let menuElement = document.querySelector("#commonMenu > div.b3-menu__items");
-    if (!menuElement) {
-        return;
-    }
-    let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
+// function createSwitchEmbedDualDocListButtonEle() {
+//     let menuElement = document.querySelector("#commonMenu > div.b3-menu__items");
+//     if (!menuElement) {
+//         return;
+//     }
+//     let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
 
-    let switchDocListButtonEle = document.createElement("button");
-    switchDocListButtonEle.classList.add("b3-menu__item");
-    let svgElement = document.createElement("svg");
-    svgElement.classList.add("b3-menu__icon");
-    let spanElement = document.createElement("span");
-    spanElement.classList.add("b3-menu__label");
-    spanElement.textContent = "二级文档列表";
-    if (showEmbedDualDocList) {
-        svgElement.innerHTML = (`<use xlink:href="#iconSelect"></use>`);
-    }
+//     let switchDocListButtonEle = document.createElement("button");
+//     switchDocListButtonEle.classList.add("b3-menu__item");
+//     let svgElement = document.createElement("svg");
+//     svgElement.classList.add("b3-menu__icon");
+//     let spanElement = document.createElement("span");
+//     spanElement.classList.add("b3-menu__label");
+//     spanElement.textContent = "二级文档列表";
+//     if (showEmbedDualDocList) {
+//         svgElement.innerHTML = (`<use xlink:href="#iconSelect"></use>`);
+//     }
 
-    switchDocListButtonEle.append(svgElement, spanElement);
-    switchDocListButtonEle.addEventListener("click", (event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        SettingService.ins.updateSettingCofnigValue("showEmbedDualDocList", !showEmbedDualDocList)
-        DocListManager.ins.intervalCheckEmbedDualDocList();
-        window.siyuan.menus.menu.remove();
-    })
+//     switchDocListButtonEle.append(svgElement, spanElement);
+//     switchDocListButtonEle.addEventListener("click", (event) => {
+//         event.stopPropagation();
+//         event.preventDefault();
+//         SettingService.ins.updateSettingCofnigValue("showEmbedDualDocList", !showEmbedDualDocList)
+//         DocListManager.ins.intervalCheckEmbedDualDocList();
+//         window.siyuan.menus.menu.remove();
+//     })
 
-    menuElement.append(switchDocListButtonEle);
+//     menuElement.append(switchDocListButtonEle);
 
-}
+// }
 
 
 type AnyObject = { [key: string]: any };
@@ -630,41 +676,91 @@ function findFileTreeWidth(obj: AnyObject): number | undefined {
     return undefined;
 }
 
-function triggerMouseDownMoveUp(element: HTMLElement) {
-    if (!element) {
-      console.warn("Invalid element passed to triggerMouseDownMoveUp");
-      return;
+
+
+function updateFileTreeWidth(obj: AnyObject, width: number) {
+    if (Array.isArray(obj)) {
+        for (const item of obj) {
+            const result = updateFileTreeWidth(item, width);
+            if (result !== undefined) return result;
+        }
+    } else if (typeof obj === "object" && obj !== null) {
+        if (obj.type === "file" && obj.size?.width !== undefined) {
+            obj.size.width = width;
+            return;
+        }
+
+        for (const key in obj) {
+            const result = updateFileTreeWidth(obj[key], width);
+            if (result !== undefined) return result;
+        }
     }
-  
-    const rect = element.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-  
-    const mouseDownEvent = new MouseEvent("mousedown", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-      clientX: centerX,
-      clientY: centerY,
-    });
-  
-    const mouseMoveEvent = new MouseEvent("mousemove", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-      clientX: centerX,
-      clientY: centerY,
-    });
-  
-    const mouseUpEvent = new MouseEvent("mouseup", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-      clientX: centerX,
-      clientY: centerY,
-    });
-  
-    element.dispatchEvent(mouseDownEvent);
-    element.dispatchEvent(mouseMoveEvent);
-    element.dispatchEvent(mouseUpEvent);
-  }
+
+    return;
+}
+
+function updateFileTreeDockWidthAndConf(layoutDockElement: HTMLElement, newLayoutDockWidth: number) {
+    layoutDockElement.style.width = newLayoutDockWidth + "px";
+    updateFileTreeWidth(window.siyuan.config.uiLayout, newLayoutDockWidth);
+    console.log("updateFileTreeWidth ", window.siyuan.config.uiLayout)
+    setUILayout(false, window.siyuan.config.uiLayout);
+
+}
+
+
+// function updateFileTreeDockWidth(layoutDockElement: HTMLElement, newLayoutDockWidth: number) {
+//     layoutDockElement.style.width = newLayoutDockWidth + "px";
+//     updateFileTreeWidth(window.siyuan.config.uiLayout, newLayoutDockWidth);
+//     // -----------
+//     let fileTreeSpanElement = window.siyuan.layout.leftDock.element.querySelector(`span[data-index][data-type="file"]`);
+//     if (!fileTreeSpanElement) {
+//         fileTreeSpanElement = window.siyuan.layout.rightDock.element.querySelector(`span[data-index][data-type="file"]`);
+//     }
+//     if (fileTreeSpanElement) {
+//         fileTreeSpanElement.setAttribute("data-width", newLayoutDockWidth);
+//         console.log("updateFileTreeWidth fileTreeSpanElement", fileTreeSpanElement.getAttribute("data-width"))
+//     }
+//     // -----------
+//     console.log(" updateFileTreeDockWidth ", window.siyuan.config.uiLayout)
+//     triggerMouseDownMoveUp(layoutDockElement.querySelector(".layout__resize"))
+// }
+
+// function triggerMouseDownMoveUp(element: HTMLElement) {
+//     if (!element) {
+//         console.warn("Invalid element passed to triggerMouseDownMoveUp");
+//         return;
+//     }
+
+//     const rect = element.getBoundingClientRect();
+//     const centerX = rect.left + rect.width / 2;
+//     const centerY = rect.top + rect.height / 2;
+
+//     const mouseDownEvent = new MouseEvent("mousedown", {
+//         bubbles: true,
+//         cancelable: true,
+//         view: window,
+//         clientX: centerX,
+//         clientY: centerY,
+//     });
+
+//     const mouseMoveEvent1 = new MouseEvent("mousemove", {
+//       bubbles: true,
+//       cancelable: true,
+//       view: window,
+//       clientX: centerX,
+//       clientY: centerY,
+//     });
+
+//     const mouseUpEvent = new MouseEvent("mouseup", {
+//         bubbles: true,
+//         cancelable: true,
+//         view: window,
+//         clientX: centerX,
+//         clientY: centerY,
+//     });
+
+//     element.dispatchEvent(mouseDownEvent);
+//     element.dispatchEvent(mouseMoveEvent1);
+//     // element.dispatchEvent(mouseMoveEvent2);
+//     element.dispatchEvent(mouseUpEvent);
+// }

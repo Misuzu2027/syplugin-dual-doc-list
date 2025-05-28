@@ -1,4 +1,5 @@
 import { EnvConfig } from "@/config/EnvConfig";
+import { getDockByType } from "@/libs/siyuan/siyuan/layout/tabUtil";
 import { isArrayEmpty } from "@/utils/array-util";
 import { isStrBlank, removePrefixAndSuffix } from "@/utils/string-util";
 import { ITab } from "siyuan";
@@ -445,3 +446,21 @@ export const getInstanceById = (
 };
 
 
+/**
+ * 
+ * @param notebookId 
+ * @param path ：protyle.path；“/20250510102251-6k93743.sy”
+ */
+export const fileTreeSelectDoc = (notebookId: string, path: string) => {
+
+    const dockFile = getDockByType("file");
+    if (!dockFile) {
+        return;
+    }
+    const files = dockFile.data.file;
+    if (!files) {
+        return;
+    }
+    files.selectItem(notebookId, path);
+    dockFile.toggleModel("file", true);
+}
