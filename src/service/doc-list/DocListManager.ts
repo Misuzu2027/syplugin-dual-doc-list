@@ -324,6 +324,11 @@ function createEmbedDualDocList() {
         docListElement.append(dragHandleElement);
         fileTreeDocElement.before(docListElement);
     }
+    // 设置焦点
+    let searchInputElement = docListElement.querySelector("input.misuzu2027__dual-doc-list__search-input") as HTMLElement;
+    if (searchInputElement) {
+        searchInputElement.focus();
+    }
     let layoutDockWidth = parseFloat(window.getComputedStyle(layoutDockElement).width);
     if (firstLoadEmbedDualDocList) {
         firstLoadEmbedDualDocList = false;
@@ -702,7 +707,7 @@ function updateFileTreeWidth(obj: AnyObject, width: number) {
 function updateFileTreeDockWidthAndConf(layoutDockElement: HTMLElement, newLayoutDockWidth: number) {
     layoutDockElement.style.width = newLayoutDockWidth + "px";
     updateFileTreeWidth(window.siyuan.config.uiLayout, newLayoutDockWidth);
-    console.log("updateFileTreeWidth ", window.siyuan.config.uiLayout)
+    // console.log("updateFileTreeWidth ", window.siyuan.config.uiLayout)
     setUILayout(false, window.siyuan.config.uiLayout);
 
 }
