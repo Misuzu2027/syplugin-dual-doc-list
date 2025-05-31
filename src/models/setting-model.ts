@@ -6,11 +6,14 @@ export class SettingConfig {
     showEmbedDualDocList: boolean;
     // 改为双击切换笔记本的折叠展开
     doubleClickToggleNotebook: boolean;
+    // 双击文档在文档树中定位
+    doubleClickDocumentToTreeLocator: boolean;
     // 显示二级文档列表 Docker
     dualDocListDockPosition: DockPosition;
     // 默认显示路径，为空则是全部文档
     defaultPathId: string;
 
+    
     // 切换路径时使用笔记本排序方式。
     // lockSortMode: boolean;
     // 显示子文档的子文档

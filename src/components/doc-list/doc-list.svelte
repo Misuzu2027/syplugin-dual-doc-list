@@ -558,7 +558,7 @@
         } else {
             clickCount = 0;
             clearTimeout(clickTimeoutId);
-            performDoubleClickAction(event);
+            performDoubleClickAction(event, blockId);
         }
     }
 
@@ -574,9 +574,16 @@
         return null;
     }
 
-    async function performDoubleClickAction(event: MouseEvent) {
+    async function performDoubleClickAction(
+        event: MouseEvent,
+        blockId: string,
+    ) {
         // 实现双击进入这个路径
-        fileTreeFocusDoc(event);
+        if (SettingService.ins.SettingConfig.doubleClickDocumentToTreeLocator) {
+            fileTreeFocusDoc(event);
+        } else {
+            enterSubdir(blockId);
+        }
     }
 
     function fileTreeFocusDoc(event: MouseEvent) {
