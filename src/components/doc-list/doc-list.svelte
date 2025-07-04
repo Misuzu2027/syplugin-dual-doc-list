@@ -115,43 +115,48 @@
         rootElement.addEventListener("click", (event: any) => {
             const target = event.target;
 
-            if (target.tagName.toLowerCase() === "span") {
-                if (target.hasAttribute("data-path-type")) {
-                    let pathType = target.getAttribute("data-path-type");
-                    let dataId = target.getAttribute("data-id");
+            if (
+                target.tagName.toLowerCase() === "span" &&
+                target.hasAttribute("data-path-type")
+            ) {
+                let pathType = target.getAttribute("data-path-type");
+                let dataId = target.getAttribute("data-id");
 
-                    let newNotebookId = null;
-                    let newDocId = null;
-                    let newDocPath = null;
+                let newNotebookId = null;
+                let newDocId = null;
+                let newDocPath = null;
 
-                    if (pathType === "box") {
-                        newNotebookId = dataId;
-                        newDocId = null;
-                        newDocPath = "/";
-                    } else if (pathType === "doc") {
-                        newNotebookId = curPathNotebookId;
-                        newDocId = dataId;
-                        newDocPath =
-                            curPathDocPath.split(dataId)[0] + dataId + ".sy";
-                    }
-                    if (isStrNotBlank(newNotebookId)) {
-                        console.log(
-                            "click path switch path ",
-                            newNotebookId,
-                            " ",
-                            newDocId,
-                            " ",
-                            newDocPath,
-                        );
-                        switchPath(newNotebookId, newDocId, newDocPath);
-                    }
+                if (pathType === "box") {
+                    newNotebookId = dataId;
+                    newDocId = null;
+                    newDocPath = "/";
+                } else if (pathType === "doc") {
+                    newNotebookId = curPathNotebookId;
+                    newDocId = dataId;
+                    newDocPath =
+                        curPathDocPath.split(dataId)[0] + dataId + ".sy";
                 }
-                if (target.hasAttribute("data-siwtch-notebook")) {
-                    const rect = target.getBoundingClientRect();
-                    showSwitchNotebookMenus({ x: rect.right, y: rect.bottom });
-                    console.log("data-siwtch-notebook");
-                    event.stopPropagation();
+                if (isStrNotBlank(newNotebookId)) {
+                    console.log(
+                        "click path switch path ",
+                        newNotebookId,
+                        " ",
+                        newDocId,
+                        " ",
+                        newDocPath,
+                    );
+                    switchPath(newNotebookId, newDocId, newDocPath);
                 }
+            }
+
+            // 查找离点击元素最近的 span
+            const span = target.closest("span");
+
+            if (span && span.hasAttribute("data-siwtch-notebook")) {
+                const rect = target.getBoundingClientRect();
+                showSwitchNotebookMenus({ x: rect.right, y: rect.bottom });
+                console.log("data-siwtch-notebook");
+                event.stopPropagation();
             }
         });
     }
