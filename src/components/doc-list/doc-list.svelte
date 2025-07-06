@@ -412,6 +412,7 @@
         let docId = null;
         let docPath = null;
         if (isStrNotBlank(defaultPathId)) {
+            await EnvConfig.ins.refreshNotebookMap();
             let notebook = EnvConfig.ins.notebookMap.get(defaultPathId);
             if (notebook) {
                 notebookId = defaultPathId;
