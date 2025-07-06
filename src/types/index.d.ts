@@ -153,6 +153,7 @@ interface Window {
         reqIds: any;
         layout: any;
         mobile: any;
+        zIndex:number;
     };
     Lute: any;
 }

@@ -13,7 +13,7 @@ export class SettingConfig {
     // 默认显示路径，为空则是全部文档
     defaultPathId: string;
 
-    
+
     // 切换路径时使用笔记本排序方式。
     // lockSortMode: boolean;
     // 显示子文档的子文档
@@ -44,6 +44,8 @@ export class SettingConfig {
     includeConcatFields: string[];
     includeBlockTypes: BlockType[];
 
+    // 移动端默认打开二级文档列表tab
+    mobileShowDualDocListTab: boolean;
 }
 
 

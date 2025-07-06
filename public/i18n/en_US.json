@@ -79,5 +79,11 @@
     "swapDocumentItemClickLogicTips": "When disabled, click to expand search results and double-click to open the document; when enabled, click to open the document and double-click to expand search results.",
     "allNotebooks": "All Notebooks",
     "specifyNotebook": "Specify Notebook",
-    "searchInTheCurrentDocument": "Search in the current document"
+    "searchInTheCurrentDocument": "Search in the current document",
+    "docSizeASC": "Document Size ASC",
+    "docSizeDESC": "Document Size DESC",
+    "subDocCountASC": "Sub-docs Count ASC ",
+    "subDocCountDESC": "Sub-docs Count DESC",
+    "customSort": "Custom Sorting",
+    "sortByFiletree": "Use doc tree sorting rule"
 }

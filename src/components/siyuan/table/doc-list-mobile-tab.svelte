@@ -36,7 +36,7 @@
     }
 
     function init() {
-        isMobile = EnvConfig.ins.isMobile;
+       
     }
 
     export async function switchPath(
@@ -70,8 +70,8 @@
 {:else}
     <div
         class="fn__flex-column misuzu2027__doc-list"
-        style="height: 100%; "
         bind:this={rootElement}
+        style="height: 100%; "
     >
         <DocListSvelte bind:this={docListSvelte} />
     </div>

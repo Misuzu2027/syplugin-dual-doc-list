@@ -1,5 +1,6 @@
 import { DocListManager } from "@/service/doc-list/DocListManager";
 import { ItemProperty, IOption, TabProperty } from "./setting-model";
+import { EnvConfig } from "@/config/EnvConfig";
 
 export const DUAL_DOC_LIST_SORT_ATTR_KEY = "custom-dual-doc-list-sort"
 
@@ -20,6 +21,8 @@ export function getSettingTabArray(): TabProperty[] {
                 new ItemProperty({ key: "dualDocListDockPosition", type: "select", name: "二级文档列表Dock", description: "修改后会刷新界面", tips: "", options: getDockPositionElement(), afterUpdateCallback: dualDocListDockPositionAfterUpdate }),
 
                 new ItemProperty({ key: "defaultPathId", type: "text", name: "默认显示路径（为空则显示全部文档）", description: "填写笔记本ID或文档ID，如果ID不存在，则显示全部文档", tips: "", }),
+
+                new ItemProperty({ key: "mobileShowDualDocListTab", type: "switch", name: "移动端默认打开二级文档列表页", description: "", tips: "", }),
 
             ]
 
@@ -95,67 +98,67 @@ function getDocDbQuerySortMethodElement(): IOption[] {
 export function SETTING_DOCUMENT_LIST_SORT_METHOD_ELEMENT(): { text: string, value: DocumentSortMode }[] {
     return [
         {
-            text: window.siyuan.languages.modifiedASC,
+            text: EnvConfig.ins.i18n.modifiedASC,
             value: "UpdatedASC",
         },
         {
-            text: window.siyuan.languages.modifiedDESC,
+            text: EnvConfig.ins.i18n.modifiedDESC,
             value: "UpdatedDESC",
         },
         {
-            text: window.siyuan.languages.createdASC,
+            text: EnvConfig.ins.i18n.createdASC,
             value: "CreatedASC",
         },
         {
-            text: window.siyuan.languages.createdDESC,
+            text: EnvConfig.ins.i18n.createdDESC,
             value: "CreatedDESC",
         },
         {
-            text: window.siyuan.languages.fileNameASC,
+            text: EnvConfig.ins.i18n.fileNameASC,
             value: "NameASC",
         },
         {
-            text: window.siyuan.languages.fileNameDESC,
+            text: EnvConfig.ins.i18n.fileNameDESC,
             value: "NameDESC",
         },
         {
-            text: window.siyuan.languages.fileNameNatASC,
+            text: EnvConfig.ins.i18n.fileNameNatASC,
             value: "AlphanumASC",
         },
         {
-            text: window.siyuan.languages.fileNameNatDESC,
+            text: EnvConfig.ins.i18n.fileNameNatDESC,
             value: "AlphanumDESC",
         },
         {
-            text: window.siyuan.languages.refCountASC,
+            text: EnvConfig.ins.i18n.refCountASC,
             value: "RefCountASC",
         },
         {
-            text: window.siyuan.languages.refCountDESC,
+            text: EnvConfig.ins.i18n.refCountDESC,
             value: "RefCountDESC",
         },
         {
-            text: window.siyuan.languages.docSizeASC,
+            text: EnvConfig.ins.i18n.docSizeASC,
             value: "SizeASC",
         },
         {
-            text: window.siyuan.languages.docSizeDESC,
+            text: EnvConfig.ins.i18n.docSizeDESC,
             value: "SizeDESC",
         },
         {
-            text: window.siyuan.languages.subDocCountASC,
+            text: EnvConfig.ins.i18n.subDocCountASC,
             value: "SubDocCountASC",
         },
         {
-            text: window.siyuan.languages.subDocCountDESC,
+            text: EnvConfig.ins.i18n.subDocCountDESC,
             value: "SubDocCountDESC",
         },
         {
-            text: window.siyuan.languages.customSort,
+            text: EnvConfig.ins.i18n.customSort,
             value: "Custom",
         },
         // {
-        //     text: window.siyuan.languages.sortByFiletree,
+        //     text: EnvConfig.ins.i18n.sortByFiletree,
         //     value: "FileTree",
         // },
     ];
@@ -164,43 +167,43 @@ export function SETTING_DOCUMENT_LIST_SORT_METHOD_ELEMENT(): { text: string, val
 export function SETTING_DOCUMENT_LIST_DB_SORT_METHOD_ELEMENT(): { name: string, value: DocumentSortMode }[] {
     return [
         {
-            name: window.siyuan.languages.modifiedASC,
+            name: EnvConfig.ins.i18n.modifiedASC,
             value: "UpdatedASC",
         },
         {
-            name: window.siyuan.languages.modifiedDESC,
+            name: EnvConfig.ins.i18n.modifiedDESC,
             value: "UpdatedDESC",
         },
         {
-            name: window.siyuan.languages.createdASC,
+            name: EnvConfig.ins.i18n.createdASC,
             value: "CreatedASC",
         },
         {
-            name: window.siyuan.languages.createdDESC,
+            name: EnvConfig.ins.i18n.createdDESC,
             value: "CreatedDESC",
         },
         {
-            name: window.siyuan.languages.fileNameASC,
+            name: EnvConfig.ins.i18n.fileNameASC,
             value: "NameASC",
         },
         {
-            name: window.siyuan.languages.fileNameDESC,
+            name: EnvConfig.ins.i18n.fileNameDESC,
             value: "NameDESC",
         },
         {
-            name: window.siyuan.languages.fileNameNatASC,
+            name: EnvConfig.ins.i18n.fileNameNatASC,
             value: "AlphanumASC",
         },
         {
-            name: window.siyuan.languages.fileNameNatDESC,
+            name: EnvConfig.ins.i18n.fileNameNatDESC,
             value: "AlphanumDESC",
         },
         {
-            name: window.siyuan.languages.refCountASC,
+            name: EnvConfig.ins.i18n.refCountASC,
             value: "RefCountASC",
         },
         {
-            name: window.siyuan.languages.refCountDESC,
+            name: EnvConfig.ins.i18n.refCountDESC,
             value: "RefCountDESC",
         },
 

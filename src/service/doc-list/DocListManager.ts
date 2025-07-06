@@ -8,6 +8,7 @@ import { setUILayout } from "@/utils/api";
 import { convertTextToFirstElement, findParentElementWithAttribute, getAttributeRecursively } from "@/utils/html-util";
 import Instance from "@/utils/Instance";
 import { clearSyFileTreeItemFocusClass, isElementHidden } from "@/utils/siyuan-util";
+import { MobileTabService } from "../plugin/MobileTabService";
 
 
 
@@ -23,6 +24,7 @@ export class DocListManager {
         this.initElementEventListener();
         this.initInterval();
         addDocListDock();
+        MobileTabService.ins.init();
         // addObserveCommonMenuElement();
     }
 
@@ -31,6 +33,7 @@ export class DocListManager {
         this.destroyElementEventListener();
         this.destroyInterval();
         destroyEmbedDualDocList();
+        MobileTabService.ins.destory();
         // destroyObserveCommonMenuElement();
     }
 
@@ -131,14 +134,14 @@ export class DocListManager {
             return
         }
 
-        // 如果是文档，但是不存在子文档。
+        // 如果是文档，但是不存在子文档(折叠按钮被隐藏了)
         if (targetLiElementType == "navigation-file"
             && targetLiElement.querySelector("span.b3-list-item__toggle").classList.contains("fn__hidden")
         ) {
             return;
         }
         // 如果是笔记本，判断一下是否启用双击切换文档折叠。
-        if (targetLiElementType == "navigation-root" && dockDocListSvelte) {
+        if (targetLiElementType == "navigation-root" && (dockDocListSvelte || MobileTabService.ins.exist())) {
             if (this.handleNotebookDoubleClick(event, targetLiElement)) {
                 return;
             }
@@ -183,8 +186,9 @@ export class DocListManager {
             embedDocListSvelte.switchPath(notebookId, docId, docPath);
         }
         if (dockDocListSvelte) {
-            dockDocListSvelte.switchPath(notebookId, docId, docPath)
+            dockDocListSvelte.switchPath(notebookId, docId, docPath);
         }
+        MobileTabService.ins.switchPath(notebookId, docId, docPath);
     }
 
 }

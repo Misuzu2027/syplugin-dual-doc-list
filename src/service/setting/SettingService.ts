@@ -111,6 +111,7 @@ function getDefaultSettingConfig() {
     defaultConfig.doubleClickDocumentToTreeLocator = false;
     defaultConfig.dualDocListDockPosition = "Hidden";
     defaultConfig.defaultPathId = "";
+    defaultConfig.mobileShowDualDocListTab = false;
 
     // defaultConfig.lockSortMode = false;
     defaultConfig.showSubDocOfSubDoc = false;

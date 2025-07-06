@@ -7,6 +7,7 @@ import { EnvConfig } from "./config/EnvConfig";
 import { CUSTOM_ICON_MAP } from "./models/icon-constant";
 import { openSettingsDialog } from "./components/setting/SettingManager";
 import { SettingService } from "./service/setting/SettingService";
+import { SiyuanEventManager } from "./service/plugin/SiyuanEventManager";
 
 
 
@@ -15,6 +16,7 @@ export default class PluginSample extends Plugin {
     async onload() {
         EnvConfig.ins.init(this);
         await SettingService.ins.init();
+        SiyuanEventManager.ins.init();
         DocListManager.ins.init();
 
         // 图标的制作参见帮助文档
@@ -32,18 +34,17 @@ export default class PluginSample extends Plugin {
 
     async onunload() {
         DocListManager.ins.destroy();
+        SiyuanEventManager.ins.destroy();
     }
 
     uninstall() {
         DocListManager.ins.destroy();
+        SiyuanEventManager.ins.destroy();
     }
 
     openSetting(): void {
         openSettingsDialog();
     }
-
-
-
 
 
 }

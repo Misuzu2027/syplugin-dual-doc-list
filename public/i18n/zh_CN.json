@@ -79,6 +79,11 @@
     "swapDocumentItemClickLogicTips": "禁用时，单击展开搜索结果，双击打开文档；启用时，单击打开文档，双击展开搜索结果。",
     "allNotebooks": "所有笔记本",
     "specifyNotebook": "指定笔记本",
-    "searchInTheCurrentDocument": "在当前文档查询"
-
+    "searchInTheCurrentDocument": "在当前文档查询",
+    "docSizeASC": "文档大小升序",
+    "docSizeDESC": "文档大小降序",
+    "subDocCountASC": "子文档数升序",
+    "subDocCountDESC": "子文档数降序",
+    "customSort": "自定义排序",
+    "sortByFiletree": "使用文档树排序规则"
 }

@@ -137,14 +137,14 @@
                         curPathDocPath.split(dataId)[0] + dataId + ".sy";
                 }
                 if (isStrNotBlank(newNotebookId)) {
-                    console.log(
-                        "click path switch path ",
-                        newNotebookId,
-                        " ",
-                        newDocId,
-                        " ",
-                        newDocPath,
-                    );
+                    // console.log(
+                    //     "click path switch path ",
+                    //     newNotebookId,
+                    //     " ",
+                    //     newDocId,
+                    //     " ",
+                    //     newDocPath,
+                    // );
                     switchPath(newNotebookId, newDocId, newDocPath);
                 }
             }
