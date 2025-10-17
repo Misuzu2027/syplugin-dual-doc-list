@@ -30,7 +30,7 @@ export function getDocIconHtmlByIal(ialStr: string, iconStr, subCount: number): 
         iconHtml = convertIconInIal(defFileIconStr);
     }
     if (!iconHtml.startsWith("<")) {
-        iconHtml = `<span class="b3-list-item__graphic">${iconHtml}</span>`;
+        iconHtml = `${iconHtml}`;
     }
     return iconHtml;
 }
@@ -42,9 +42,9 @@ export function convertIconInIal(icon: string): string {
 
     if (icon.includes(".")) {
         // 如果包含 "."，则认为是图片，生成<img>标签
-        return `<img class="b3-list-item__graphic" src="/emojis/${icon}">`;
+        return `<img class src="/emojis/${icon}">`;
     } else if (icon.startsWith("api/icon/")) {
-        return `<img class="b3-list-item__graphic" src="${icon}">`;
+        return `<img class src="${icon}">`;
     } else {
         // 如果是Emoji，转换为表情符号
         let emoji = "";

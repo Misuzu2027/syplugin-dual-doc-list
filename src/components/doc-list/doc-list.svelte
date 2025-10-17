@@ -1804,7 +1804,9 @@
                         
                     {/if} -->
                     <span
-                        class="b3-list-item__icon"
+                        class="b3-list-item__icon popover__block"
+                        style="padding-right: 8px;"
+                          data-id="{item.fileBlock.id}"
                         on:click={(event) => {
                             docIconClick(event, item);
                         }}
