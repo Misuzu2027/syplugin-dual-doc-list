@@ -172,7 +172,7 @@ async function setBlockSubFileCount(fileBlockResults: FileBlock[], notebookId: N
     if (isStrNotBlank(notebookId)) {
         let path = "";
         if (isStrNotBlank(docPath)) {
-            path = removeLastPathSegment(path);
+            path = removeLastPathSegment(docPath);
         }
         let np = notebookId + "::" + path;
         notebookPathSet.add(np);

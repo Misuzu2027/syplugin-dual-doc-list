@@ -9,6 +9,7 @@
 import { fetchSyncPost, IWebSocketData } from "siyuan";
 import { isBoolean } from "./object-util";
 import { getNotebookIcon } from "./icon-util";
+import { isStrBlank } from "./string-util";
 
 
 
@@ -222,6 +223,19 @@ export async function listDocsByPath(
 }
 
 
+function normalizeListDocTreePath(path: string): string {
+    if (isStrBlank(path) || path === "/") {
+        return "";
+    }
+    // SiYuan 3.7.3+ 在 Windows 下用 filepath.Join 拼接路径时，
+    // 前导 "/" 会被当作绝对路径，从而触发 path escapes notebook directory。
+    let normalized = path.startsWith("/") ? path.slice(1) : path;
+    if (normalized.endsWith(".sy")) {
+        normalized = normalized.slice(0, -3);
+    }
+    return normalized;
+}
+
 export async function listDocTree(
     notebook: NotebookId,
     path: string,
@@ -235,7 +249,7 @@ export async function listDocTree(
      */
     let data = {
         notebook: notebook,
-        path: path,
+        path: normalizeListDocTreePath(path),
     };
     let url = '/api/filetree/listDocTree';
     return request(url, data);

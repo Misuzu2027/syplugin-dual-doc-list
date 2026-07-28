@@ -16,6 +16,13 @@ export class EnvConfig {
         return isMobile;
     }
 
+    // todo 暂时无法判断是否是平板
+    get isTablet(): boolean {
+        let frontEnd: string = getFrontend();
+        let isTablet = frontEnd === "desktop" || frontEnd === "desktop-window";
+        return isTablet;
+    }
+
     private _plugin: Plugin;
     get plugin(): Plugin {
         return this._plugin;

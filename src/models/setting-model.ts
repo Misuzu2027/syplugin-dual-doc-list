@@ -2,8 +2,10 @@ import { isStrNotBlank } from "@/utils/string-util";
 
 
 export class SettingConfig {
-    // 显示嵌入的二级文档列表
+    // 桌面端显示嵌入的二级文档列表
     showEmbedDualDocList: boolean;
+    // 平板端显示嵌入的二级文档列表
+    showEmbedDualDocListOnTablet: boolean;
     // 改为双击切换笔记本的折叠展开
     doubleClickToggleNotebook: boolean;
     // 双击文档在文档树中定位

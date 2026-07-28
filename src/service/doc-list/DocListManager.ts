@@ -219,12 +219,26 @@ function intervalCheckEmbedDualDocList() {
         destorySwitchEmbedDualDocListButtonForFileTreeTop();
     }
     let showEmbedDualDocList = SettingService.ins.SettingConfig.showEmbedDualDocList;
-    if (showEmbedDualDocList) {
-        createEmbedDualDocList();
+    let showEmbedDualDocListOnTablet = SettingService.ins.SettingConfig.showEmbedDualDocListOnTablet;
+    // 判断是否为平板端
+    if (EnvConfig.ins.isTablet) {
+        // 平板端使用 showEmbedDualDocListOnTablet 配置
+        if (showEmbedDualDocListOnTablet) {
+            createEmbedDualDocList();
+        } else {
+            showEmbedDualDocListOnTablet = false;
+            destroyEmbedDualDocList();
+        }
     } else {
-        firstLoadEmbedDualDocList = false;
-        destroyEmbedDualDocList();
+        // 非平板端使用 showEmbedDualDocList 配置
+        if (showEmbedDualDocList) {
+            createEmbedDualDocList();
+        } else {
+            firstLoadEmbedDualDocList = false;
+            destroyEmbedDualDocList();
+        }
     }
+
 }
 
 function createSwitchEmbedDualDocListButtonForFileTreeTop() {
