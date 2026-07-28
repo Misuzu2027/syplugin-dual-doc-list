@@ -13,9 +13,10 @@ export function getSettingTabArray(): TabProperty[] {
     tabProperties.push(
         new TabProperty({
             key: "function-setting", name: "功能", iconKey: "iconFilter", props: [
-                new ItemProperty({ key: "showEmbedDualDocList", type: "switch", name: "桌面端显示嵌入的二级文档列表", description: "", tips: "", afterUpdateCallback: showEmbedDualDocListAfterUpdate }),
+                new ItemProperty({ key: "showEmbedDualDocList", type: "switch", name: "显示嵌入的二级文档列表", description: "", tips: "", afterUpdateCallback: showEmbedDualDocListAfterUpdate }),
 
-                new ItemProperty({ key: "showEmbedDualDocListOnTablet", type: "switch", name: "平板显示嵌入的二级文档列表", description: "", tips: "",afterUpdateCallback: showEmbedDualDocListAfterUpdate }),
+                // 思源暂无可靠的平板端判断 API，待官方支持后再启用
+                // new ItemProperty({ key: "showEmbedDualDocListOnTablet", type: "switch", name: "平板显示嵌入的二级文档列表", description: "", tips: "", afterUpdateCallback: showEmbedDualDocListAfterUpdate }),
 
                 new ItemProperty({ key: "doubleClickToggleNotebook", type: "switch", name: "双击展开/折叠笔记本", description: "", tips: "" }),
                 new ItemProperty({ key: "doubleClickDocumentToTreeLocator", type: "switch", name: "双击文档在文档树中定位", description: "关闭后双击会进入子目录", tips: "", }),

@@ -2,10 +2,10 @@ import { isStrNotBlank } from "@/utils/string-util";
 
 
 export class SettingConfig {
-    // 桌面端显示嵌入的二级文档列表
+    // 显示嵌入的二级文档列表
     showEmbedDualDocList: boolean;
-    // 平板端显示嵌入的二级文档列表
-    showEmbedDualDocListOnTablet: boolean;
+    // 思源暂无可靠的平板端判断 API，待官方支持后再启用
+    // showEmbedDualDocListOnTablet: boolean;
     // 改为双击切换笔记本的折叠展开
     doubleClickToggleNotebook: boolean;
     // 双击文档在文档树中定位
