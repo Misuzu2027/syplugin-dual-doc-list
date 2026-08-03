@@ -1,6 +1,6 @@
 import { EnvConfig } from "@/config/EnvConfig";
 import { BlockItem, DocumentQueryCriteria } from "@/models/search-model";
-import { getBlockIndex, getBlocksIndexes, listDocsByPath, listDocTree, sql } from "@/utils/api";
+import { getBlockIndex, getBlocksIndexes, isNotebookRootListPath, listDocsByPath, listDocTree, sql } from "@/utils/api";
 import { isArrayEmpty, isArrayNotEmpty } from "@/utils/array-util";
 import { getDocIconHtmlByIal } from "@/utils/icon-util";
 import { containsAllKeywords, isStrBlank, isStrNotBlank, } from "@/utils/string-util";
@@ -168,14 +168,33 @@ async function setBlockSubFileCount(fileBlockResults: FileBlock[], notebookId: N
     if (isArrayEmpty(fileBlockResults)) {
         return;
     }
+
+    // listDocTree 在 SiYuan 3.7.3 无法请求笔记本根目录（IsSubPath 相等路径缺陷），
+    // 根路径改走 listDocsByPath；非根路径继续用 listDocTree。
+    const rootNotebookIds = new Set<string>();
     let notebookPathSet = new Set<string>();
+
     if (isStrNotBlank(notebookId)) {
         let path = "";
         if (isStrNotBlank(docPath)) {
             path = removeLastPathSegment(docPath);
         }
-        let np = notebookId + "::" + path;
-        notebookPathSet.add(np);
+        if (isNotebookRootListPath(path)) {
+            rootNotebookIds.add(notebookId);
+            // 根目录列表可能包含更深层文档，为其父路径补充 listDocTree
+            for (const document of fileBlockResults) {
+                if (document.box !== notebookId || !isStrNotBlank(document.path)) {
+                    continue;
+                }
+                const parentPath = removeLastPathSegment(document.path);
+                if (!isNotebookRootListPath(parentPath)) {
+                    notebookPathSet.add(notebookId + "::" + parentPath);
+                }
+            }
+            notebookPathSet = findShortestPaths(notebookPathSet);
+        } else {
+            notebookPathSet.add(notebookId + "::" + path);
+        }
     } else {
         for (const document of fileBlockResults) {
             let box = document.box;
@@ -186,31 +205,48 @@ async function setBlockSubFileCount(fileBlockResults: FileBlock[], notebookId: N
             if (isStrNotBlank(path)) {
                 path = removeLastPathSegment(path);
             }
-            let np = box + "::" + path;
-            notebookPathSet.add(np);
+            if (isNotebookRootListPath(path)) {
+                rootNotebookIds.add(box);
+            } else {
+                notebookPathSet.add(box + "::" + path);
+            }
         }
         notebookPathSet = findShortestPaths(notebookPathSet);
     }
-    let docTreePromises = [];
-    for (const np of notebookPathSet) {
-        let nps = np.split("::");
-        let apiPromise = listDocTree(nps[0], nps[1]);
-        docTreePromises.push(apiPromise);
+
+    const docSubCountMap = new Map<string, number>();
+
+    const rootPromises = Array.from(rootNotebookIds).map(async (box) => {
+        const data = await listDocsByPath(box, "/", null, null, null, null);
+        if (!data?.files) {
+            return;
+        }
+        for (const file of data.files) {
+            docSubCountMap.set(file.id, file.subFileCount ?? 0);
+        }
+    });
+
+    const docTreePromises = Array.from(notebookPathSet).map((np) => {
+        const nps = np.split("::");
+        return listDocTree(nps[0], nps[1] ?? "");
+    });
+
+    await Promise.all(rootPromises);
+    const docTreeArray: IDocTreeResp[] = await Promise.all(docTreePromises);
+    const treeMap = docTreeRespArrayToMap(docTreeArray);
+    for (const [id, count] of treeMap) {
+        docSubCountMap.set(id, count);
     }
-    let docTreeArray: IDocTreeResp[] = await Promise.all(docTreePromises);
-    let docSubCountMap = docTreeRespArrayToMap(docTreeArray);
 
     for (const document of fileBlockResults) {
         let subFileCount = docSubCountMap.get(document.id);
-        subFileCount = subFileCount ? subFileCount : 0;
-        document.subFileCount = subFileCount;
+        document.subFileCount = subFileCount ? subFileCount : 0;
     }
     const endTime = performance.now(); // 记录结束时间
     const executionTime = endTime - startTime; // 计算时间差
     console.log(
-        `设置文档子文档数量方法 发送请求数量 ${docTreePromises.length}，笔记本数量 ${EnvConfig.ins.notebookMap.size}，处理时间 : ${executionTime} ms `,
+        `设置文档子文档数量方法 发送请求数量 ${rootNotebookIds.size + docTreePromises.length}，笔记本数量 ${EnvConfig.ins.notebookMap.size}，处理时间 : ${executionTime} ms `,
     );
-
 }
 
 function docTreeRespArrayToMap(resps: IDocTreeResp[]): Map<string, number> {

@@ -223,12 +223,21 @@ export async function listDocsByPath(
 }
 
 
-function normalizeListDocTreePath(path: string): string {
-    if (isStrBlank(path) || path === "/") {
+/** 是否为笔记本根路径（listDocTree 在 3.7.3 下无法安全请求根目录） */
+export function isNotebookRootListPath(path: string): boolean {
+    return isStrBlank(path) || path === "/";
+}
+
+/**
+ * 规范化 listDocTree 的 path。
+ * - 根路径统一为 ""（调用方应改走 listDocsByPath，勿直接请求 listDocTree）
+ * - 去掉前导 "/"：Windows 下 filepath.Join 会把 "/xxx" 当成绝对路径
+ * - 去掉末尾 ".sy"
+ */
+export function normalizeListDocTreePath(path: string): string {
+    if (isNotebookRootListPath(path)) {
         return "";
     }
-    // SiYuan 3.7.3+ 在 Windows 下用 filepath.Join 拼接路径时，
-    // 前导 "/" 会被当作绝对路径，从而触发 path escapes notebook directory。
     let normalized = path.startsWith("/") ? path.slice(1) : path;
     if (normalized.endsWith(".sy")) {
         normalized = normalized.slice(0, -3);
@@ -247,9 +256,15 @@ export async function listDocTree(
 }
 }
      */
+    const normalizedPath = normalizeListDocTreePath(path);
+    // SiYuan 3.7.3 listDocTree 用 IsSubPath 校验；根目录时 root==notebook，
+    // IsSubPath 对相等路径返回 false，会误报 path escapes notebook directory。
+    if (normalizedPath === "") {
+        return { tree: [] };
+    }
     let data = {
         notebook: notebook,
-        path: normalizeListDocTreePath(path),
+        path: normalizedPath,
     };
     let url = '/api/filetree/listDocTree';
     return request(url, data);
