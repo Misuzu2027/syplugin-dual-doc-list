@@ -7,6 +7,7 @@ import { CUSTOM_ICON_MAP } from "@/models/icon-constant";
 export class MobileTabService {
     private mobileTabDocListEle: HTMLElement | null = null;
     private mobileTabDocListSvelte: DocListSvelte | null = null;
+    private topBarAdded = false;
 
     public static get ins(): MobileTabService {
         return Instance.get(MobileTabService);
@@ -17,14 +18,18 @@ export class MobileTabService {
             return;
         }
 
-        EnvConfig.ins.plugin.addTopBar({
-            icon: CUSTOM_ICON_MAP.iconDualDocList.id,
-            title: "二级文档列表页",
-            position: "left",
-            callback: () => {
-                this.open();
-            }
-        });
+        if (!this.topBarAdded) {
+            EnvConfig.ins.plugin.addTopBar({
+                icon: CUSTOM_ICON_MAP.iconDualDocList.id,
+                title: "二级文档列表页",
+                position: "left",
+                callback: () => {
+                    this.open();
+                }
+            });
+            this.topBarAdded = true;
+        }
+
         let settingConfig = SettingService.ins.SettingConfig;
         if (settingConfig.mobileShowDualDocListTab) {
             this.createMobileTab();
@@ -34,10 +39,13 @@ export class MobileTabService {
     public async destory() {
         if (this.mobileTabDocListSvelte) {
             this.mobileTabDocListSvelte.$destroy();
+            this.mobileTabDocListSvelte = null;
         }
         if (this.mobileTabDocListEle) {
             this.mobileTabDocListEle.remove();
+            this.mobileTabDocListEle = null;
         }
+        this.topBarAdded = false;
     }
 
     public exist(): boolean {
@@ -64,6 +72,11 @@ export class MobileTabService {
     private createMobileTab() {
         if (this.mobileTabDocListSvelte) {
             this.mobileTabDocListSvelte.$destroy();
+            this.mobileTabDocListSvelte = null;
+        }
+        if (this.mobileTabDocListEle) {
+            this.mobileTabDocListEle.remove();
+            this.mobileTabDocListEle = null;
         }
         this.mobileTabDocListEle = document.createElement("div");
         this.mobileTabDocListEle.classList.add("fn__flex-column", "misuzu2027__doc-list");
@@ -97,11 +110,8 @@ export class MobileTabService {
     }
 
     public close() {
-        if (!EnvConfig.ins.isMobile) {
+        if (!EnvConfig.ins.isMobile || !this.mobileTabDocListEle) {
             return;
-        }
-        if (!this.mobileTabDocListEle) {
-            this.init();
         }
         this.mobileTabDocListEle.classList.add("fn__none");
     }

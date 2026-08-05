@@ -1,27 +1,27 @@
 import { EnvConfig } from "@/config/EnvConfig";
 import { Dialog } from "siyuan";
-import SettingPageSvelte from "@/components/setting/setting-page.svelte"
-
-
-
+import SettingPageSvelte from "@/components/setting/setting-page.svelte";
 
 export function openSettingsDialog() {
-    let isMobile = EnvConfig.ins.isMobile;
-    // 生成Dialog内容
-    const dialogId = "backlink-panel-setting-" + Date.now();
-    // 创建dialog
+    const isMobile = EnvConfig.ins.isMobile;
+    const dialogId = "dual-doc-list-setting-" + Date.now();
+    const title = EnvConfig.ins.i18n?.settingHub || "二级文档列表插件设置";
+
+    let panel: SettingPageSvelte | null = null;
     const settingDialog = new Dialog({
-        title: "二级文档列表插件设置",
+        title,
         content: `
-          <div  id="${dialogId}" style="overflow: hidden; position: relative;height: 100%;"></div>
+          <div id="${dialogId}" style="overflow: hidden; position: relative;height: 100%;"></div>
           `,
-        width: isMobile ? "92vw" : "1040px",
-        height: isMobile ? "50vw" : "80vh",
+        width: isMobile ? "92vw" : "720px",
+        height: "70vh",
+        destroyCallback: () => {
+            panel?.$destroy();
+            panel = null;
+        },
     });
 
-    new SettingPageSvelte({
+    panel = new SettingPageSvelte({
         target: settingDialog.element.querySelector(`#${dialogId}`),
     });
-
-
 }

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { getSettingTabArray } from "@/models/setting-constant";
     import SettingItem from "./setting-item.svelte";
+    import SettingLayout from "./SettingLayout.svelte";
     import { TabProperty } from "@/models/setting-model";
     import SettingSwitch from "./inputs/setting-switch.svelte";
     import SettingSelect from "./inputs/setting-select.svelte";
@@ -8,62 +9,47 @@
     import { SettingService } from "@/service/setting/SettingService";
 
     let tabArray: TabProperty[] = getSettingTabArray();
-    let activeTab = tabArray[0].key;
+    let activeTab = tabArray[0]?.key ?? "";
     SettingService.ins.init();
 
-    function handleKeyDownDefault(event) {
-        if (event) {
-        }
-        // console.log(event.key);
-    }
+    $: layoutTabs = tabArray.map((t) => ({
+        key: t.key,
+        label: t.name,
+        icon: t.iconKey,
+    }));
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-<div
-    class="fn__flex-1 fn__flex config__panel"
-    style="width: auto; height: 100%; max-width: 1280px;"
->
-    <ul class="b3-tab-bar b3-list b3-list--background">
-        {#each tabArray as tab}
-            <li
-                class="b3-list-item {activeTab === tab.key
-                    ? 'b3-list-item--focus'
-                    : true}"
-                on:click={() => {
-                    activeTab = tab.key;
-                }}
-                on:keydown={handleKeyDownDefault}
-            >
-                <svg class="b3-list-item__graphic">
-                    <use xlink:href={"#" + tab.iconKey}></use>
-                </svg>
-                <span class="b3-list-item__text">{tab.name}</span>
-            </li>
+<div class="ddl-setting">
+    <SettingLayout tabs={layoutTabs} bind:activeTab>
+        {#each tabArray as tab (tab.key)}
+            <div class="ddl-setting__tab" class:fn__none={activeTab !== tab.key}>
+                {#each tab.props as itemProperty (itemProperty.key)}
+                    <SettingItem {itemProperty}>
+                        {#if itemProperty.type == "switch"}
+                            <SettingSwitch {itemProperty} />
+                        {:else if itemProperty.type == "select"}
+                            <SettingSelect {itemProperty} />
+                        {:else if itemProperty.type == "number" || itemProperty.type == "text"}
+                            <SettingInput {itemProperty} />
+                        {:else}
+                            不能载入设置项，请检查设置代码实现。 Key: {itemProperty.key}
+                            <br />
+                            can't load settings, check code please. Key:
+                            {itemProperty.key}
+                        {/if}
+                    </SettingItem>
+                {/each}
+            </div>
         {/each}
-    </ul>
-    <div class="config__tab-wrap">
-        {#each tabArray as tab}
-            {#if activeTab === tab.key}
-                <div class="config__tab-container">
-                    {#each tab.props as itemProperty}
-                        <SettingItem {itemProperty}>
-                            {#if itemProperty.type == "switch"}
-                                <SettingSwitch {itemProperty}></SettingSwitch>
-                            {:else if itemProperty.type == "select"}
-                                <SettingSelect {itemProperty}></SettingSelect>
-                            {:else if itemProperty.type == "number" || itemProperty.type == "text"}
-                                <SettingInput {itemProperty} />
-                            {:else}
-                                不能载入设置项，请检查设置代码实现。 Key: {itemProperty.key}
-                                <br />
-                                can't load settings, check code please. Key:
-                                {itemProperty.key}
-                            {/if}
-                        </SettingItem>
-                    {/each}
-                </div>
-            {/if}
-        {/each}
-    </div>
+    </SettingLayout>
 </div>
+
+<style lang="scss">
+    .ddl-setting {
+        height: 100%;
+    }
+    .ddl-setting__tab {
+        display: flex;
+        flex-direction: column;
+    }
+</style>
