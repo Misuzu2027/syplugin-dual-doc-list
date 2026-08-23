@@ -935,6 +935,14 @@
         showCurPath = showCurPathTemp;
     }
 
+    function getNotebookSortModeAttr(box: string): string | number {
+        const notebook = EnvConfig.ins.notebookMap.get(box);
+        if (notebook?.sortMode != null) {
+            return notebook.sortMode;
+        }
+        return window.siyuan.config.fileTree.sort ?? "";
+    }
+
     function getBoxIconAndNameHtml(box: string) {
         if (isStrBlank(box)) {
             return "";
@@ -1784,6 +1792,7 @@
             <ul
                 class="b3-list b3-list--background file-tree"
                 data-url={item.fileBlock.box}
+                data-sortmode={getNotebookSortModeAttr(item.fileBlock.box)}
             >
                 <li
                     data-node-id={item.fileBlock.id}
