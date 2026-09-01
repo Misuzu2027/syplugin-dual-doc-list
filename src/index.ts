@@ -37,11 +37,6 @@ export default class PluginSample extends Plugin {
         SiyuanEventManager.ins.destroy();
     }
 
-    uninstall() {
-        DocListManager.ins.destroy();
-        SiyuanEventManager.ins.destroy();
-    }
-
     openSetting(): void {
         openSettingsDialog();
     }
