@@ -3,12 +3,12 @@
     import { DocumentTreeItemInfo } from "@/models/document-model";
     import {
         clearCssHighlights,
-        escapeHTML,
         highlightElementTextByCss,
         scrollByRange,
     } from "@/utils/html-util";
     import {
         TProtyleAction,
+        openDocTreeMenu,
         openMobileFileById,
         openTab,
         Constants,
@@ -519,6 +519,37 @@
         handleClickLogic(event, blockId);
     }
 
+    async function docItemContextMenu(event: MouseEvent) {
+        if (event.shiftKey) {
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+
+        const target = event.currentTarget as HTMLElement;
+        const focused = Array.from(
+            rootElement.querySelectorAll("li.b3-list-item--focus"),
+        ) as HTMLElement[];
+        const rows =
+            focused.includes(target) && focused.length > 1 ? focused : [target];
+        const items = rows.flatMap((row) => {
+            const notebookId = row.parentElement?.getAttribute("data-url");
+            const id = row.getAttribute("data-node-id");
+            if (isStrBlank(notebookId) || isStrBlank(id)) {
+                return [];
+            }
+            return [{ notebookId, id }];
+        });
+        if (items.length === 0) {
+            return;
+        }
+
+        await openDocTreeMenu({
+            position: { x: event.clientX, y: event.clientY },
+            items,
+        });
+    }
+
     async function docIconClick(event: MouseEvent, item: DocumentTreeItemInfo) {
         if (!event) return;
         event.stopPropagation();
@@ -933,14 +964,6 @@
         }
 
         showCurPath = showCurPathTemp;
-    }
-
-    function getNotebookSortModeAttr(box: string): string | number {
-        const notebook = EnvConfig.ins.notebookMap.get(box);
-        if (notebook?.sortMode != null) {
-            return notebook.sortMode;
-        }
-        return window.siyuan.config.fileTree.sort ?? "";
     }
 
     function getBoxIconAndNameHtml(box: string) {
@@ -1531,6 +1554,7 @@
                 let hideListElement = item.cloneNode(true) as HTMLElement;
                 hideListElement.style.display = "none";
                 hideListElement.classList.add("misuzu-drag-hide-doc-list");
+                hideListElement.setAttribute("data-type", "navigation-file");
                 syFileTreeElement.append(hideListElement);
             });
             ghostElement.setAttribute(
@@ -1792,19 +1816,16 @@
             <ul
                 class="b3-list b3-list--background file-tree"
                 data-url={item.fileBlock.box}
-                data-sortmode={getNotebookSortModeAttr(item.fileBlock.box)}
             >
                 <li
                     data-node-id={item.fileBlock.id}
-                    data-name={escapeHTML(item.fileBlock.content) + ".sy"}
-                    data-block-name={escapeHTML(item.fileBlock.name)}
                     data-count={item.fileBlock.subFileCount}
-                    data-type="navigation-file"
                     style="--file-toggle-width:40px;height:32px;padding:2px;"
                     class="b3-list-item b3-list-item--hide-action"
                     draggable={EnvConfig.ins.isMobile ? "false" : "true"}
                     data-path={item.fileBlock.path}
                     on:click={docItemClick}
+                    on:contextmenu={docItemContextMenu}
                     on:keydown={handleKeyDownDefault}
                     on:dragstart={docListItemDragstartEvent}
                     on:dragend={docListItemDragendEvent}
